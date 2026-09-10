@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Header from './components/Header.jsx'
 import Footer from './components/Footer.jsx'
 import SetupNotice from './components/SetupNotice.jsx'
@@ -13,10 +13,13 @@ import { isConfigured } from './lib/amplify.js'
 const Admin = lazy(() => import('./pages/admin/Admin.jsx'))
 
 export default function App() {
+  // 管理画面は表の列が多いので、本文の幅より広く使う
+  const isAdmin = useLocation().pathname.startsWith('/admin')
+
   return (
     <>
       <Header />
-      <main className="page">
+      <main className={isAdmin ? 'page page--wide' : 'page'}>
         {!isConfigured && <SetupNotice />}
         <Routes>
           <Route path="/" element={<PluginList />} />

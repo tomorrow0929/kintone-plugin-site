@@ -10,8 +10,16 @@
   margin: 6px 0;
 }
 
-.site-footer__note {
-  max-width: 720px;
-  margin-inline: auto;
+/*
+ * 注記。セレクタを .site-footer p と同じ強さ以上にしないと、
+ * 上の margin: 6px 0 に margin-inline: auto が負けて左に寄る
+ * （.site-footer p はクラス+要素で、.site-footer__note 単独より詳細度が高い）。
+ */
+.site-footer p.site-footer__note {
+  max-width: 640px;
+  margin: 12px auto;
   font-size: 0.82rem;
+  line-height: 1.8;
+  /* 2行になったときに行の長さをそろえる（未対応ブラウザでは無視される） */
+  text-wrap: balance;
 }
