@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="140" viewBox="0 0 520 140">
+  <defs>
+    <!-- オレンジ多めグラデーション（40%以降オレンジ系） -->
+    <linearGradient id="smoothGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00C6FF" />
+      <stop offset="35%" stop-color="#00AEEF" />
+      <stop offset="50%" stop-color="#FFA75C" />
+      <stop offset="70%" stop-color="#FF8C42" />
+      <stop offset="100%" stop-color="#FF6F00" />
+    </linearGradient>
+
+    <!-- 太陽グラデーション -->
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFDE7D" />
+      <stop offset="100%" stop-color="#FF8C42" />
+    </radialGradient>
+  </defs>
+
+  <!-- ロゴマーク（曲線 + 太陽） -->
+  <g transform="translate(20,20)">
+    <!-- 地平線（波線を太くして、色をグラデーションに変更） -->
+    <path d="M0,80 Q50,60 100,80 T200,80" fill="none" stroke="url(#smoothGrad)" stroke-width="6" />
+    
+    <!-- 太陽 -->
+    <circle cx="100" cy="65" r="20" fill="url(#sun)" />
+    
+    <!-- 光の輪 -->
+    <circle cx="100" cy="65" r="26" fill="none" stroke="#FFD580" stroke-width="2" opacity="0.6" />
+  </g>
+
+  <!-- テキスト（グラデーションで自然に色分け） -->
+  <text x="160" y="95" font-family="'Noto Serif JP', 'Times New Roman', serif"
+        font-size="48" font-weight="600" letter-spacing="1.2" fill="url(#smoothGrad)">
+    to.Morrow
+  </text>
+</svg>

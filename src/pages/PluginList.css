@@ -1,0 +1,130 @@
+.hero {
+  text-align: center;
+  padding: 32px 16px 24px;
+}
+
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: clamp(1.6rem, 1.3rem + 1.5vw, 2.4rem);
+  color: var(--brand-navy);
+}
+
+.hero p {
+  max-width: 680px;
+  margin-inline: auto;
+  color: var(--muted);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.filters__search {
+  flex: 1 1 260px;
+  padding: 11px 16px;
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.filters__search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 114, 255, 0.15);
+}
+
+.filters__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 7px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.chip--active {
+  background: var(--brand-navy);
+  border-color: var(--brand-navy);
+  color: #fff;
+  font-weight: 700;
+}
+
+.plugin-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.plugin-card {
+  display: flex;
+  gap: 16px;
+  height: 100%;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.plugin-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: #c8dcf0;
+}
+
+.plugin-card__icon {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #eaf4fb;
+  font-size: 1.6rem;
+  overflow: hidden;
+}
+
+.plugin-card__icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.plugin-card__body h2 {
+  margin: 0 0 6px;
+  font-size: 1.02rem;
+  color: var(--brand-navy);
+}
+
+.plugin-card__body p {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.plugin-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
