@@ -49,11 +49,10 @@ export default function AdminPluginList() {
     }
   }
 
-  if (state === 'loading') return <p className="status">読み込み中…</p>
-  if (state === 'error') return <p className="status status--error">{error}</p>
-
   return (
     <>
+      {/* 一覧の読み込みに失敗しても操作ボタンは出す。
+          データが読めないと登録もできない、という詰まり方を防ぐため。 */}
       <div className="admin__head">
         <h1>プラグイン管理</h1>
         <div className="admin__actions">
@@ -66,10 +65,25 @@ export default function AdminPluginList() {
         </div>
       </div>
 
-      {plugins.length === 0 ? (
-        <p className="status">まだ登録がありません。「新規追加」から登録してください。</p>
-      ) : (
-        <div className="admin__tablewrap">
+      {state === 'loading' && <p className="status">読み込み中…</p>}
+
+      {state === 'error' && (
+        <p className="status status--error">
+          一覧の読み込みに失敗しました。
+          <br />
+          <small>{error}</small>
+          <br />
+          <button type="button" className="linklike" onClick={load}>
+            再読み込み
+          </button>
+        </p>
+      )}
+
+      {state === 'done' &&
+        (plugins.length === 0 ? (
+          <p className="status">まだ登録がありません。「新規追加」から登録してください。</p>
+        ) : (
+          <div className="admin__tablewrap">
           <table className="admin__table">
             <thead>
               <tr>
@@ -113,8 +127,8 @@ export default function AdminPluginList() {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
+          </div>
+        ))}
     </>
   )
 }

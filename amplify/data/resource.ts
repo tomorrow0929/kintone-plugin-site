@@ -35,8 +35,11 @@ const schema = a.schema({
     .authorization((allow) => [
       // 未ログインの訪問者は「読むだけ」
       allow.guest().to(['read']),
-      // ログイン済み（＝管理者）は作成・更新・削除ができる
-      allow.authenticated(),
+      // ログイン済み（＝管理者）は作成・更新・削除ができる。
+      // 'identityPool' の指定が必須。省略すると userPools 経由の認証だけが
+      // 許可され、identityPool で接続しているクライアントが弾かれます
+      // （Not Authorized to access listPlugins on type Query）。
+      allow.authenticated('identityPool'),
     ]),
 })
 
