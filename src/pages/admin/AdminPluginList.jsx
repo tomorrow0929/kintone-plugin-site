@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listAllPlugins, deletePlugin, removeFile, updatePlugin } from '../../lib/api.js'
 import { formatBytes } from '../../lib/format.js'
+import { normalizeUsage, isUsageEmpty } from '../../lib/usage.js'
 
 export default function AdminPluginList() {
   const [plugins, setPlugins] = useState([])
@@ -94,6 +95,7 @@ export default function AdminPluginList() {
                 <th>version</th>
                 <th>サイズ</th>
                 <th>DL数</th>
+                <th>使い方</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -117,6 +119,11 @@ export default function AdminPluginList() {
                   <td>v{p.version}</td>
                   <td>{formatBytes(p.zipSize)}</td>
                   <td>{p.downloadCount ?? 0}</td>
+                  <td>
+                    <Link to={`/admin/usage/${p.id}`}>
+                      {isUsageEmpty(normalizeUsage(p.usage)) ? '未記入' : '編集'}
+                    </Link>
+                  </td>
                   <td className="admin__actions">
                     <Link to={`/admin/edit/${p.id}`}>編集</Link>
                     <button type="button" className="linklike danger" onClick={() => handleDelete(p)}>

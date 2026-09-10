@@ -70,11 +70,31 @@ export async function deletePlugin(id) {
   if (errors?.length) throw new Error(errors.map((e) => e.message).join('\n'))
 }
 
-/** S3 に置いたファイルの一時ダウンロードURLを作る */
-export async function getFileUrl(key) {
+/**
+ * S3 に置いたファイルの一時URLを作る。
+ *
+ * S3 は公開設定にしていないので、毎回この署名付きURLを作って渡す。
+ * expiresIn の既定を長め（1時間）にしているのは、ページを開いたまま
+ * しばらく読まれる使い方の画像でURLが切れないようにするため。
+ * zip のダウンロードは押した瞬間に使うだけなので短くてよい。
+ */
+export async function getFileUrl(key, expiresIn = 3600) {
   if (!key) return null
-  const { url } = await getUrl({ path: key, options: { expiresIn: 300 } })
+  const { url } = await getUrl({ path: key, options: { expiresIn } })
   return url.toString()
+}
+
+/**
+ * 複数のキーをまとめてURLに変換する。
+ * 1つ失敗しても他を落とさないよう、個別に握りつぶして null を入れる。
+ * 返り値は { キー: URL } の形。
+ */
+export async function getFileUrlMap(keys) {
+  const unique = [...new Set(keys.filter(Boolean))]
+  const entries = await Promise.all(
+    unique.map(async (key) => [key, await getFileUrl(key).catch(() => null)]),
+  )
+  return Object.fromEntries(entries)
 }
 
 /** S3 にファイルをアップロード（管理画面から使用） */

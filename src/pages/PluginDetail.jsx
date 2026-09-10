@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { getPluginBySlug, getFileUrl } from '../lib/api.js'
 import { isConfigured } from '../lib/amplify.js'
 import { formatBytes, formatDate } from '../lib/format.js'
+import { normalizeUsage } from '../lib/usage.js'
+import UsageSection from '../components/UsageSection.jsx'
 import './PluginDetail.css'
 
 export default function PluginDetail() {
@@ -45,7 +47,8 @@ export default function PluginDetail() {
     if (!plugin || downloading) return
     setDownloading(true)
     try {
-      const url = await getFileUrl(plugin.zipKey)
+      // 押した直後に使うだけなので短い有効期限で十分
+      const url = await getFileUrl(plugin.zipKey, 300)
       window.location.href = url
     } catch {
       alert('ダウンロードURLの取得に失敗しました。時間をおいて再度お試しください。')
@@ -120,6 +123,8 @@ export default function PluginDetail() {
           )}
         </section>
       )}
+
+      <UsageSection usage={normalizeUsage(plugin.usage)} />
 
       <section className="detail__section">
         <h2>導入方法</h2>

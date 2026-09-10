@@ -28,9 +28,22 @@ const schema = a.schema({
 
       releasedAt: a.date(),               // 公開日
 
-      // ダウンロード数。今は管理画面から手で直せる項目としてだけ持っています。
-      // 自動カウントは、まず基本のデプロイが通ってから追加します。
+      // ダウンロード数。今は管理画面から手で直せる項目としてだけ持っている
+      // （自動カウントは Lambda の循環参照で外したまま。READMEの「やること」参照）
       downloadCount: a.integer().default(0),
+
+      /**
+       * 使い方（管理画面の「使い方を編集」から入力する）。
+       *
+       * 形が変わっても作り直さずに済むよう json で持つ。中身:
+       *   {
+       *     intro: string,                        導入文
+       *     steps: [{ title, body, imageKey,      手順（画像は1枚まで）
+       *               imageCaption }],
+       *     notes: string                         注意点
+       *   }
+       */
+      usage: a.json(),
     })
     .authorization((allow) => [
       // 未ログインの訪問者は「読むだけ」

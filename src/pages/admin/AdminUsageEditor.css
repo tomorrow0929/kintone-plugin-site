@@ -1,0 +1,105 @@
+/* ===== 管理画面：使い方の編集 ===== */
+.usage-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 26px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.usage-editor__heading {
+  margin: 8px 0 0;
+  padding-bottom: 8px;
+  font-size: 1rem;
+  color: var(--brand-navy);
+  border-bottom: 1px solid var(--border);
+}
+
+.usage-editor textarea,
+.usage-editor input[type='text'],
+.usage-editor input:not([type]) {
+  width: 100%;
+  padding: 11px 13px;
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.usage-editor textarea {
+  resize: vertical;
+}
+
+.usage-editor textarea:focus,
+.usage-editor input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 114, 255, 0.15);
+}
+
+.usage-editor__ok {
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* ===== 手順1つ分 ===== */
+.usage-step {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: #fbfcfd;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.usage-step__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.usage-step__num {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.usage-step__tools {
+  display: flex;
+  gap: 14px;
+  font-size: 0.88rem;
+}
+
+.usage-step__tools button:disabled {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: not-allowed;
+}
+
+/* ===== 画像 ===== */
+.usage-step__image {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.usage-step__image img {
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.usage-step__imagetools {
+  font-size: 0.88rem;
+}

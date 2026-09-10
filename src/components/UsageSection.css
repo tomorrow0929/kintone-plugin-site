@@ -1,0 +1,207 @@
+/* ===== 公開ページの「使い方」 ===== */
+.usage {
+  margin-top: 28px;
+  padding: 26px 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.usage > h2 {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+  color: var(--brand-navy);
+}
+
+.usage__intro {
+  margin: 0 0 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ===== 手順 ===== */
+.usage__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: usage-step;
+}
+
+.usage__step {
+  counter-increment: usage-step;
+  position: relative;
+  padding: 0 0 28px 52px;
+}
+
+/* 番号のバッジ */
+.usage__step::before {
+  content: counter(usage-step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+/* 番号どうしをつなぐ縦線。最後の手順には引かない */
+.usage__step::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 40px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--border);
+}
+
+.usage__step:last-child {
+  padding-bottom: 0;
+}
+
+.usage__step:last-child::after {
+  display: none;
+}
+
+.usage__stepbody h3 {
+  margin: 5px 0 8px;
+  font-size: 1.02rem;
+  color: var(--text);
+}
+
+.usage__stepbody p {
+  margin: 0 0 8px;
+}
+
+/* ===== 画像 ===== */
+.usage__figure {
+  margin: 14px 0 0;
+}
+
+.usage__zoom {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fbfcfd;
+  cursor: zoom-in;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.2s ease;
+}
+
+.usage__zoom:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.usage__zoom img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.usage__figure figcaption {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* ===== 注意点 ===== */
+.usage__notes {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: #fff8ec;
+  border: 1px solid #ffd79a;
+  border-radius: 10px;
+}
+
+.usage__notes h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: #8a5a00;
+}
+
+.usage__notes p {
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+}
+
+.usage__notes p:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== 画像の拡大表示 ===== */
+.usage__lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.82);
+  cursor: zoom-out;
+}
+
+.usage__lightbox img {
+  max-width: min(1100px, 92vw);
+  max-height: 82vh;
+  margin-inline: auto;
+  border-radius: 8px;
+  background: #fff;
+  cursor: default;
+}
+
+.usage__lightboxcaption {
+  margin: 0;
+  text-align: center;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.usage__close {
+  position: fixed;
+  top: 14px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.usage__close:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+@media (max-width: 560px) {
+  .usage {
+    padding: 20px 16px;
+  }
+
+  .usage__step {
+    padding-left: 42px;
+  }
+
+  .usage__step::before {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+
+  .usage__step::after {
+    left: 13px;
+    top: 34px;
+  }
+}

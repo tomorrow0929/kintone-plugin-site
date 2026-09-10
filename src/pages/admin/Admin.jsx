@@ -5,6 +5,7 @@ import { isConfigured } from '../../lib/amplify.js'
 import AdminPluginList from './AdminPluginList.jsx'
 import AdminPluginForm from './AdminPluginForm.jsx'
 import AdminBulkImport from './AdminBulkImport.jsx'
+import AdminUsageEditor from './AdminUsageEditor.jsx'
 import './Admin.css'
 
 export default function Admin() {
@@ -36,6 +37,7 @@ export default function Admin() {
             <Route path="new" element={<AdminPluginForm mode="create" />} />
             <Route path="edit/:id" element={<AdminPluginForm mode="edit" />} />
             <Route path="import" element={<AdminBulkImport />} />
+            <Route path="usage/:id" element={<AdminUsageEditor />} />
           </Routes>
         </div>
       )}

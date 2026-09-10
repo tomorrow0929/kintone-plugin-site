@@ -80,9 +80,10 @@ kintone-plugin-site/
     │   ├── amplify.js         AWSへの接続設定
     │   ├── api.js             DynamoDB / S3 の読み書き
     │   ├── readPluginZip.js   zip から manifest.json を読む
+    │   ├── usage.js           使い方データ（json）の形をそろえる
     │   └── format.js          バイト数・日付の整形
     │
-    ├── components/            Header / Footer / SetupNotice
+    ├── components/            Header / Footer / SetupNotice / UsageSection
     │
     ├── pages/
     │   ├── PluginList.jsx     一覧（トップ）。検索・カテゴリ絞り込み
@@ -92,7 +93,8 @@ kintone-plugin-site/
     │       ├── Admin.jsx            ログインとページ振り分け
     │       ├── AdminPluginList.jsx  一覧・公開切替・削除
     │       ├── AdminPluginForm.jsx  1件ずつ追加・編集
-    │       └── AdminBulkImport.jsx  zip をまとめて取り込む
+    │       ├── AdminBulkImport.jsx  zip をまとめて取り込む
+    │       └── AdminUsageEditor.jsx 使い方を書く（手順＋画像）
     │
     └── styles/base.css
 ```
@@ -208,6 +210,35 @@ slug は英語名から自動生成される。**公開後に変えるとURLが�
 
 ---
 
+## 使い方を書く
+
+一覧の「使い方」列のリンク（`/admin/usage/:id`）から編集する。
+未記入なら「未記入」と表示される。
+
+書けるもの:
+
+| | |
+| --- | --- |
+| 導入文 | 手順の前に出る。何ができるか、どんな場面で使うか |
+| 手順 | 見出し＋説明＋画像1枚。上へ／下へで並べ替えできる |
+| 注意点 | 手順のあとに黄色い枠で出る |
+
+- **画像は5MBまで。** 設定画面のスクリーンショットや図を入れる
+- 説明の改行はそのまま反映される
+- **中身が空のうちは、公開ページに「使い方」の見出しごと出ない**
+
+データは Plugin の `usage` フィールドに json で入れている。
+項目を増やしたくなってもテーブルを作り直さずに済むようにしたため。
+読み込みは必ず `src/lib/usage.js` の `normalizeUsage` を通して、
+中身が空でも古い形でも画面が落ちないようにしている。
+
+画像は S3 の `usage/<slug>/` に置く。手順から画像を外して保存すると、
+使われなくなった画像は S3 からも消える。
+
+公開ページでは番号付きのステップで表示され、画像はクリックで拡大できる。
+
+---
+
 ## ハマったところ
 
 作り直すときや機能を足すときに同じ穴に落ちないためのメモ。
@@ -253,8 +284,11 @@ Lambda 側にテーブルの権限とテーブル名を渡したところ、Clou
 
 ## やること
 
-- [ ] ダウンロード数の自動カウント（循環参照で外したまま。AppSync 経由なら入れられる）
+- [ ] ダウンロード数の自動カウント。2回試して2回ともデプロイに失敗している
+      - 1回目: Lambda から DynamoDB を直接更新 → 循環参照
+      - 2回目: Lambda から AppSync 経由 → 原因未特定（ビルドログを見られていない）
+      - 次に試すなら、まずビルドログで失敗理由を確認する
 - [ ] カテゴリと並び順の設定（今は全件カテゴリ未設定・並び順100）
 - [ ] 独自ドメインを取ったら `Desktop/kintonePlugin/tools/set-homepage-url.mjs` の
       `SITE` を直して zip を作り直す
-- [ ] 帳票出力プラグインの説明文を充実させる（一番の推しなので）
+- [ ] 各プラグインの使い方を書く（一番の推しの帳票出力から）
