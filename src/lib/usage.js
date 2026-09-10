@@ -57,6 +57,19 @@ export function createStep() {
   }
 }
 
+/**
+ * DB に保存できる形（JSON文字列）にする。
+ *
+ * a.json() は AppSync の AWSJSON 型になり、
+ * 「JSONとして解釈できる文字列」しか受け付けない。
+ * オブジェクトのまま渡すと
+ *   Variable 'usage' has an invalid value.
+ * で保存に失敗する。
+ */
+export function toStoredUsage(usage) {
+  return JSON.stringify(serializeUsage(usage))
+}
+
 /** 保存用に整える（空の手順は落とす） */
 export function serializeUsage(usage) {
   return {

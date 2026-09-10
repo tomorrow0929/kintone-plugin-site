@@ -11,6 +11,7 @@ import {
   normalizeUsage,
   createStep,
   serializeUsage,
+  toStoredUsage,
   collectImageKeys,
   EMPTY_USAGE,
 } from '../../lib/usage.js'
@@ -142,9 +143,14 @@ export default function AdminUsageEditor() {
         if (!after.has(key)) await removeFile(key)
       }
 
-      const saved = await updatePlugin({ id, usage: payload })
-      setPlugin(saved ?? { ...plugin, usage: payload })
-      setUsage(normalizeUsage(payload))
+      // AWSJSON はJSON文字列しか受け付けないので、必ず文字列にして渡す
+      const stored = toStoredUsage(usage)
+      const saved = await updatePlugin({ id, usage: stored })
+
+      // 次に保存するときの「変更前」として使うので、
+      // DBから返ってくるのと同じ形（文字列）で持っておく
+      setPlugin(saved ?? { ...plugin, usage: stored })
+      setUsage(normalizeUsage(stored))
       setMessage({ type: 'success', text: '保存しました。' })
     } catch (e) {
       setMessage({ type: 'error', text: `保存に失敗しました（${e.message}）` })
