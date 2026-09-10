@@ -1,234 +1,260 @@
-# to.Morrow kintone プラグイン配布サイト
+# kintone プラグイン配布サイト
 
-kintone プラグインを一般公開してダウンロードしてもらうためのサイトです。
-**React + Vite**（画面）と **AWS Amplify Gen 2**（データベース・ファイル置き場・ログイン）でできています。
+自作の kintone プラグインを無料で配布するサイト。
+プラグインの追加・更新は管理画面から行うので、コードを触る必要はない。
 
----
-
-## ⚠️ 最初に：絶対に公開してはいけないファイル
-
-`kintonePlugin` フォルダにある **`.ppk` ファイルは署名用の秘密鍵**です。
-
-- 流出すると、第三者があなたのプラグインIDで偽物を配布できてしまいます
-- **このリポジトリにも、このサイトにも、絶対に置かないでください**
-- `.gitignore` で `*.ppk` `*.pem` `*.key` を除外していますが、念のため毎回確認してください
-
-配布するのは **`.zip` だけ**です。
+- 本番: https://main.d3cec5zpyigwxh.amplifyapp.com/
+- 管理画面: https://main.d3cec5zpyigwxh.amplifyapp.com/admin
+- リポジトリ: https://github.com/tomorrow0929/kintone-plugin-site
+- ホスティング: AWS Amplify（アプリID `d3cec5zpyigwxh`）
+- プラグインのソース: `Desktop/kintonePlugin`（Git管理していないローカルのみ）
 
 ---
 
-## 1. 全体の構成
+## ⚠️ .ppk は絶対に置かない
 
-```
-       あなた                        訪問者
-         │                            │
-    ログイン(Cognito)              そのまま閲覧
-         │                            │
-         ▼                            ▼
-   ┌──────────────────────────────────────┐
-   │  このサイト（React / Amplify Hosting）│
-   └──────────────────────────────────────┘
-         │                            │
-         ├── プラグイン情報 ──▶ DynamoDB（データベース）
-         └── zip / アイコン ──▶ S3（ファイル置き場）
-```
+`Desktop/kintonePlugin` の各フォルダにある `*.ppk` はプラグインの**署名用秘密鍵**。
+プラグインIDはこの鍵から決まるので、流出すると第三者が同じIDで偽物を配布できる。
 
-| 使うもの | 役割 |
+**このリポジトリにも、このサイトにも置かない。** 配布するのは `.zip` だけ。
+`.gitignore` で `*.ppk` `*.pem` `*.key` を除外しているが、コミット前に一応確認する。
+
+---
+
+## 何でできているか
+
+| | |
 | --- | --- |
-| Amplify Hosting | サイトの公開 |
-| Cognito | 管理画面のログイン（あなただけ） |
-| DynamoDB | プラグインの名前・説明・バージョンなどの保存 |
-| S3 | zip ファイルとアイコン画像の保存 |
+| フレームワーク | React 18 |
+| ビルド | Vite 6 |
+| 言語 | JavaScript（JSX）。`amplify/` だけ TypeScript（Amplify の仕様） |
+| ルーティング | React Router 6（`BrowserRouter`） |
+| バックエンド | AWS Amplify Gen 2 |
+| ログイン | Amazon Cognito（サインアップは無効化済み） |
+| データベース | DynamoDB（AppSync 経由） |
+| ファイル置き場 | S3 |
 
-**料金:** どれも無料枠が大きく、個人配布サイト程度のアクセスならほぼ 0 円です。
-ただし無料枠を超えると課金されるので、AWS の Budgets でアラートを設定しておくことをおすすめします。
+### 構成図
+
+```
+      自分                          訪問者
+       │                              │
+  Cognito でログイン              そのまま閲覧
+       │                              │
+       ▼                              ▼
+ ┌────────────────────────────────────────┐
+ │  React / Amplify Hosting               │
+ └────────────────────────────────────────┘
+       │                              │
+       ├── プラグイン情報 ──▶ DynamoDB（訪問者は読み取りのみ）
+       └── zip / アイコン ──▶ S3      （訪問者は読み取りのみ）
+```
+
+書き込みはログイン済みのときだけ。訪問者はダウンロードと閲覧しかできない。
+
+**料金:** どれも無料枠が大きいので、この規模ならほぼ0円。
+念のため AWS Budgets でアラートを設定しておく。
 
 ---
 
-## 2. フォルダ構成
+## 構成
 
 ```
 kintone-plugin-site/
-├── index.html              ← ページの土台
-├── package.json
-├── vite.config.js
-├── amplify.yml             ← Amplify のビルド設定
+├── index.html
+├── vite.config.js          base は '/'
+├── amplify.yml             backend で amplify/ をデプロイ、frontend でサイトをビルド
 │
-├── amplify/                ← AWSの設計図（ここに書くとAWSに作られます）
-│   ├── backend.ts              全体のまとめ
-│   ├── auth/resource.ts        ログイン（Cognito）
-│   ├── data/resource.ts        データベース（DynamoDB）の項目定義
-│   └── storage/resource.ts     ファイル置き場（S3）
+├── amplify/                ★ AWSの設計図。ここに書いた内容がAWSに作られる
+│   ├── backend.ts              全体のまとめ。サインアップ無効化もここ
+│   ├── auth/resource.ts        Cognito
+│   ├── data/resource.ts        DynamoDB のテーブル定義と権限
+│   └── storage/resource.ts     S3 のパスと権限
 │
-├── public/                 ← そのまま公開されるファイル（ファビコン等）
+├── public/                 ファビコン・logo.svg・robots.txt
 │
 └── src/
-    ├── main.jsx / App.jsx      入口とページの振り分け
+    ├── main.jsx / App.jsx
+    │
     ├── lib/
-    │   ├── amplify.js          AWSへの接続設定
-    │   ├── api.js              データベース・S3の読み書き
-    │   ├── readPluginZip.js    zipからmanifest.jsonを読む
-    │   └── format.js           表示整形
-    ├── components/             ヘッダー・フッターなど
+    │   ├── amplify.js         AWSへの接続設定
+    │   ├── api.js             DynamoDB / S3 の読み書き
+    │   ├── readPluginZip.js   zip から manifest.json を読む
+    │   └── format.js          バイト数・日付の整形
+    │
+    ├── components/            Header / Footer / SetupNotice
+    │
     ├── pages/
-    │   ├── PluginList.jsx      プラグイン一覧（トップ）
-    │   ├── PluginDetail.jsx    プラグイン詳細＋ダウンロード
-    │   └── admin/              管理画面
-    │       ├── Admin.jsx           ログインとページ振り分け
-    │       ├── AdminPluginList.jsx 登録済み一覧・公開切替・削除
-    │       ├── AdminPluginForm.jsx 1件ずつ追加・編集
-    │       └── AdminBulkImport.jsx zipをまとめて取り込む
+    │   ├── PluginList.jsx     一覧（トップ）。検索・カテゴリ絞り込み
+    │   ├── PluginDetail.jsx   詳細・ダウンロード・導入手順
+    │   ├── NotFound.jsx
+    │   └── admin/
+    │       ├── Admin.jsx            ログインとページ振り分け
+    │       ├── AdminPluginList.jsx  一覧・公開切替・削除
+    │       ├── AdminPluginForm.jsx  1件ずつ追加・編集
+    │       └── AdminBulkImport.jsx  zip をまとめて取り込む
+    │
     └── styles/base.css
 ```
 
+管理画面は Amplify UI（ログイン部品）が重いので `React.lazy` で分割してある。
+おかげで訪問者が見るページは 133KB（gzip）で済み、318KB の CSS は
+`/admin` を開いたときだけ読み込まれる。
+
 ---
 
-## 3. AWS のセットアップ
-
-### 3-1. AWS CLI を入れて認証情報を設定する
-
-まだ入っていないので、最初に入れてください。
-
-1. [AWS CLI をダウンロード](https://aws.amazon.com/jp/cli/)してインストール
-2. AWS マネジメントコンソール → IAM → ユーザー → 自分のユーザー →
-   「セキュリティ認証情報」→「アクセスキーを作成」
-3. ターミナルで設定
-
-```bash
-aws configure
-# AWS Access Key ID     → 手順2で作ったキー
-# AWS Secret Access Key → 同上
-# Default region name   → ap-northeast-1
-# Default output format → json
-```
-
-確認:
-
-```bash
-aws sts get-caller-identity
-```
-
-自分のアカウントIDが表示されればOKです。
-
-### 3-2. 自分専用のお試し環境（サンドボックス）を起動
+## 開発
 
 ```bash
 npm install     # 初回のみ
-npm run sandbox
+npm run sandbox # 別ターミナルで起動したままにする
+npm run dev     # http://localhost:5173/
 ```
 
-初回は5〜10分かかります。AWS 上に自分だけの DynamoDB / S3 / Cognito が作られ、
-接続情報 `amplify_outputs.json` が自動生成されます（Git には入りません）。
+`npm run sandbox` は AWS 上に自分専用の DynamoDB / S3 / Cognito を作り、
+接続情報 `amplify_outputs.json` を生成する（Git対象外）。初回は5〜10分かかる。
 
-**起動したままにしておいてください。** 別のターミナルを開いて:
+`amplify_outputs.json` が無いときは画面に案内を出して落ちないようにしてある。
+デザインの確認だけならサンドボックス無しでもできる。
+
+サンドボックスを止めるときは `Ctrl+C` →「リソースを削除しますか？」に `y`/`n`。
+
+### AWS CLI
+
+`npm run sandbox` には AWS の認証情報が必要。
 
 ```bash
-npm run dev
+aws configure
+# region は ap-northeast-1
+aws sts get-caller-identity   # 確認
 ```
-
-http://localhost:5173/ でサイトが見られます。
-
-サンドボックスを止めるには `Ctrl + C` →「リソースを削除しますか？」に `y`（消す）/ `n`（残す）で答えます。
 
 ---
 
-## 4. 本番として公開する
+## デプロイ
 
-### 4-1. GitHub にリポジトリを作って push
+`main` に push すれば Amplify が自動でビルド＆デプロイする。
+`amplify/` を変更した場合はバックエンドの再デプロイも走るので5〜10分かかる。
 
-```bash
-git remote add origin https://github.com/tomorrow0929/kintone-plugin-site.git
-git branch -M main
-git push -u origin main
+**プラグインの追加・更新に push は不要。** 管理画面から行う。
+
+### 初回だけ必要だった設定（作り直すとき用のメモ）
+
+**1. サービスロール**
+
+Amplify のサービスロールに `AmplifyBackendDeployFullAccess` を持つロールを設定する。
+自動で作られる `AmplifySSRLoggingRole` はログ出力専用でリソースを作れない。
+
+**2. SPA の書き換えルール**
+
+`index.html` 1枚で複数ページを表示しているので、これが無いと
+`/plugins/xxx` や `/admin` を直接開いたときに404になる。
+
+Amplify → Hosting → 書き換えとリダイレクト:
+
+```json
+[
+  {
+    "source": "</^[^.]+$|\\.(?!(css|gif|ico|jpg|jpeg|js|png|txt|svg|woff|woff2|ttf|map|json|webmanifest|webp)$)([^.]+$)/>",
+    "status": "200",
+    "target": "/index.html",
+    "condition": null
+  }
+]
 ```
 
-### 4-2. Amplify にアプリを作成
+**3. 管理者アカウント**
 
-1. AWS マネジメントコンソール → **AWS Amplify** → **新しいアプリを作成**
-2. **GitHub** を選び、作ったリポジトリと `main` ブランチを指定
-3. ビルド設定は `amplify.yml` が自動で使われます（そのままでOK）
-4. 「保存してデプロイ」
+サインアップは `backend.ts` で無効にしてある（誰でも管理画面に入れないため）。
+アカウントは Cognito コンソールで作る。
 
-初回は10分ほどかかります（AWSリソースの作成を含むため）。
-
-### 4-3. 【重要】SPA 用の書き換えルールを追加
-
-このサイトは1つの `index.html` で複数ページを表示する仕組み（SPA）です。
-そのままだと `/plugins/bulk-copy` を直接開いたときに **404** になります。
-
-Amplify コンソール → 対象アプリ → **Hosting** → **書き換えとリダイレクト** →
-**ルールを追加** で、次を登録してください。
-
-| 項目 | 値 |
-| --- | --- |
-| 送信元アドレス | `</^[^.]+$\|\.(?!(css\|gif\|ico\|jpg\|jpeg\|js\|png\|txt\|svg\|woff\|woff2\|ttf\|map\|json\|webmanifest)$)([^.]+$)/>` |
-| ターゲットアドレス | `/index.html` |
-| 種類 | `200 (書き換え)` |
-
-### 4-4. 管理者アカウントを作る
-
-サインアップは**意図的に無効化**してあります（誰でも管理画面に入れないようにするため）。
-アカウントは AWS 側で作成します。
-
-1. AWS コンソール → **Amazon Cognito** → ユーザープール
-   （Amplify が作ったもの。名前に `amplifyAuth` が入っています）
-2. 「ユーザー」→ **ユーザーを作成**
-3. メールアドレスと仮パスワードを設定して作成
-4. サイトの `/admin` を開き、そのメールアドレスと仮パスワードでログイン
-5. 新しいパスワードを設定すれば完了
+Cognito → ユーザープール（名前に `amplifyAuth` が入っているもの）→ ユーザー → ユーザーを作成。
+**「E メールアドレスを検証済みとしてマークする」にチェックを入れる**（忘れるとログインできない）。
+仮パスワードでログインすると新パスワードの設定を求められる。
 
 ---
 
-## 5. プラグインを登録する
+## プラグインを登録する
 
-サイトのフッター「管理者ログイン」または `/admin` から入ります。
+`/admin` からログインして操作する。
 
-### まとめて登録する（おすすめ）
+### まとめて取り込む
 
-「**zip をまとめて取り込む**」を開き、プラグインの zip を複数まとめて選択してください。
-zip の中の `manifest.json` から名前・説明・バージョン・アイコンを自動で読み取ります。
+`Desktop/kintonePlugin/_dist/` に全プラグインの zip をまとめてある。
+「zip をまとめて取り込む」で `Ctrl+A` で全選択すれば一度に登録できる。
 
-- **取り込み直後は「非公開」**です。内容を確認してから一覧で「非公開」を押して公開に切り替えてください
-- `slug`（URLに使う文字列）は英語名から自動生成されます。空欄になった場合は手入力してください
+zip の中の `manifest.json` から名前・説明・バージョン・アイコンを自動で読む。
+kintone の zip は二重構造（`contents.zip` の中に `manifest.json`）なので、
+`src/lib/readPluginZip.js` で2段階に展開している。
 
-### 1件ずつ登録する
+**取り込み直後は非公開。** 内容を確認してから一覧で「非公開」を押して公開に切り替える。
 
-「**+ 新規追加**」から入力します。zip とアイコンを個別に指定できます。
+### 1件ずつ
 
-### 項目の意味
+「+ 新規追加」から。zip とアイコンを個別に指定できる。
 
-| 項目 | 説明 |
+### 項目
+
+| 項目 | 内容 |
 | --- | --- |
 | slug | URLに使う識別子。`bulk-copy` → `/plugins/bulk-copy` |
-| 1行説明 | 一覧のカードに表示される短い説明 |
-| 詳しい説明 | 詳細ページの本文。改行で段落が分かれます |
-| 並び順 | 数字が小さいほど一覧の上に表示 |
-| 公開する | 外すと下書き扱いになり、一般には見えません |
+| 1行説明 | 一覧のカードに出る短い説明 |
+| 詳しい説明 | 詳細ページの本文。改行で段落が分かれる |
+| 並び順 | 小さいほど上。既定は100 |
+| 公開する | 外すと下書き扱いで一般には見えない |
+
+slug は英語名から自動生成される。**公開後に変えるとURLが変わってリンクが切れる**ので、
+公開前に決めておく。
 
 ---
 
-## 6. 日々の更新
+## ハマったところ
 
-```bash
-git add .
-git commit -m "更新内容"
-git push
-```
+作り直すときや機能を足すときに同じ穴に落ちないためのメモ。
 
-push すると Amplify が自動でビルド・公開します。
+**`allow.authenticated()` は provider を明示する**
 
-**プラグインの追加・更新は push 不要です。** 管理画面から行えます。
+省略すると userPools 経由の認証だけを許可する。クライアントは
+`authMode: 'identityPool'` で接続しているので、ログイン済みでも弾かれて
+`Not Authorized to access listPlugins on type Query` になる。
+`allow.authenticated('identityPool')` と書く。
+
+**DynamoDB の `limit` は「返す件数」ではなく「絞り込む前に読む件数」**
+
+`filter` と併用すると、limit までに該当が無ければ0件で返ってくる。
+続きがあることは `nextToken` でしか分からず、**中身が空でも nextToken があれば
+次を読む必要がある**。`api.js` の `listAllPages` で全ページたどっている。
+
+以前 `getPluginBySlug` で `limit: 1` にしていて、詳細ページが常に
+「プラグインが見つかりませんでした」になっていた。
+
+**データ定義と Lambda を相互参照させると循環参照になる**
+
+ダウンロード数カウント用の Lambda を、データ定義から参照しつつ
+Lambda 側にテーブルの権限とテーブル名を渡したところ、CloudFormation が
+`Circular dependency between resources` で失敗した。
+直接テーブルを触るのではなく AppSync 経由にする必要がある。
+
+**`npm ci` がロックファイルを拒否する**
+
+`@aws-amplify/backend-cli` が内包する CDK 関連パッケージの構造上、
+`npm install` が作った `package-lock.json` を `npm ci` が「同期していない」と
+誤判定する（`Missing: @aws-cdk/toolkit-lib ... from lock file`）。
+ロックを作り直しても npm を上げても再発するので、`amplify.yml` で
+`npm ci || npm install` のフォールバックにしている。
+
+**Amplify にビルド設定が無いと画面が真っ白になる**
+
+`amplify.yml` の `artifacts.baseDirectory: dist` が無いと、Amplify はビルドせずに
+ソースをそのまま配信する。`index.html` が参照する `/src/main.jsx` は
+ビルド前のファイルなので404になり、何も描画されない。
 
 ---
 
-## 7. 今後の改善メモ
+## やること
 
-- **ダウンロード数の自動カウントは未実装です。**
-  当初 Lambda で実装しましたが、「データ定義が Lambda を参照し、Lambda がデータのテーブルを参照する」
-  循環参照になりデプロイに失敗したため、いったん外しました。
-  `downloadCount` の項目自体は残っているので、基本のデプロイが安定してから
-  AppSync 経由の方式で入れ直せます。
-- **各プラグインの `manifest.json` の `homepage_url` が `https://example.com` のまま**です。
-  このサイトのURLが決まったら書き換えて、`kintonePlugin` フォルダで
-  `node tools/pack-all.mjs` を実行して zip を作り直してください。
-  kintone のプラグイン一覧からここへ来てもらえるようになります。
+- [ ] ダウンロード数の自動カウント（循環参照で外したまま。AppSync 経由なら入れられる）
+- [ ] カテゴリと並び順の設定（今は全件カテゴリ未設定・並び順100）
+- [ ] 独自ドメインを取ったら `Desktop/kintonePlugin/tools/set-homepage-url.mjs` の
+      `SITE` を直して zip を作り直す
+- [ ] 帳票出力プラグインの説明文を充実させる（一番の推しなので）
