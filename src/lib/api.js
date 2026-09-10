@@ -84,16 +84,6 @@ export async function removeFile(path) {
   }
 }
 
-/** ダウンロード数を1増やす（失敗しても本体のDLは止めない） */
-export async function countDownload(pluginId) {
-  if (!client) return
-  try {
-    await client.mutations.incrementDownloadCount({ pluginId })
-  } catch {
-    // カウントの失敗はユーザーに影響させない
-  }
-}
-
 function sortPlugins(list) {
   return [...list].sort(
     (a, b) => (a.sortOrder ?? 100) - (b.sortOrder ?? 100) || a.name.localeCompare(b.name, 'ja'),
