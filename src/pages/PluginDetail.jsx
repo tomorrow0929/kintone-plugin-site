@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getPluginBySlug, getFileUrl } from '../lib/api.js'
+import { getPluginBySlug, getFileUrl, countDownload } from '../lib/api.js'
 import { isConfigured } from '../lib/amplify.js'
 import { formatBytes, formatDate } from '../lib/format.js'
 import './PluginDetail.css'
@@ -46,6 +46,7 @@ export default function PluginDetail() {
     setDownloading(true)
     try {
       const url = await getFileUrl(plugin.zipKey)
+      countDownload(plugin.id) // 待たない。失敗してもDLは進める
       window.location.href = url
     } catch {
       alert('ダウンロードURLの取得に失敗しました。時間をおいて再度お試しください。')

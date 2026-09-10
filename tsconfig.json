@@ -11,5 +11,11 @@
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["src", "amplify", "scripts"]
+  "include": ["src", "amplify", "scripts"],
+  "exclude": [
+    // Lambda のハンドラは $amplify/env/... という Amplify が生成する型を import する。
+    // ampx（sandbox / pipeline-deploy）を実行しないと存在しないため、
+    // ローカルの型チェックからは除外する。Amplify のビルド時には解決される。
+    "amplify/functions/*/handler.ts"
+  ]
 }
