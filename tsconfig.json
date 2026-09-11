@@ -11,5 +11,6 @@
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["src", "amplify", "scripts"]
+  "include": ["src", "amplify", "scripts"],
+  "exclude": ["amplify/functions/*/handler.ts"]
 }

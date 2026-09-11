@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+
+    /*
+     * これが無いと Lambda のバンドルに失敗する。
+     *
+     * ハンドラが import する '$amplify/env/<関数名>' は、
+     * ampx が .amplify/generated/env/<関数名>.ts に書き出す実ファイルへの別名。
+     * esbuild はこの paths を見て解決するので、対応表が無いと
+     *   Could not resolve "$amplify/env/increment-download"
+     *   [FailedToBundleAsset] ... esbuild ... exited with status 1
+     * になる。
+     *
+     * esbuild はハンドラのある場所から上に向かって最初に見つけた tsconfig を使うため、
+     * このファイル（amplify/tsconfig.json）が必要。
+     * ルートの tsconfig.json では amplify/ の外の設定になってしまい届かない。
+     */
+    "paths": {
+      "$amplify/*": ["../.amplify/generated/*"]
+    }
+  }
+}

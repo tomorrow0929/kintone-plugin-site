@@ -69,7 +69,10 @@ kintone-plugin-site/
 │   ├── backend.ts              全体のまとめ。サインアップ無効化もここ
 │   ├── auth/resource.ts        Cognito
 │   ├── data/resource.ts        DynamoDB のテーブル定義と権限
-│   └── storage/resource.ts     S3 のパスと権限
+│   ├── storage/resource.ts     S3 のパスと権限
+│   ├── tsconfig.json           $amplify/* の解決に必須（下の「ハマったところ」参照）
+│   └── functions/increment-download/
+│                               ダウンロード数を+1するLambda
 │
 ├── public/                 ファビコン・logo.svg・robots.txt
 │
@@ -266,6 +269,34 @@ Lambda 側にテーブルの権限とテーブル名を渡したところ、Clou
 `Circular dependency between resources` で失敗した。
 直接テーブルを触るのではなく AppSync 経由にする必要がある。
 
+**Lambda を足すなら `amplify/tsconfig.json` が要る**
+
+ハンドラが書く `import { env } from '$amplify/env/<関数名>'` は、
+ampx が `.amplify/generated/env/<関数名>.ts` に書き出す実ファイルへの別名。
+この対応表は **tsconfig の paths** で与える。
+
+```json
+"paths": { "$amplify/*": ["../.amplify/generated/*"] }
+```
+
+esbuild はハンドラのある場所から上に向かって最初に見つけた tsconfig を読むので、
+**`amplify/tsconfig.json` に置かないと届かない**。ルートの tsconfig では効かない。
+
+無いとバンドルの段階で落ちる:
+
+```
+Could not resolve "$amplify/env/increment-download"
+[FailedToBundleAsset] ... esbuild ... exited with status 1
+```
+
+このプロジェクトは `npm create amplify` を使わず手で作ったため、
+標準では付いてくるこのファイルが無く、Lambda の追加で2回デプロイに失敗した。
+
+なお `.amplify/generated/` は ampx を動かすまで存在しないので、
+ローカルの `tsc` はハンドラを解決できない。
+ルートの tsconfig で `amplify/functions/*/handler.ts` を exclude しているのはそのため。
+Amplify のビルド時には生成済みなので型チェックされる。
+
 **`npm ci` がロックファイルを拒否する**
 
 `@aws-amplify/backend-cli` が内包する CDK 関連パッケージの構造上、
@@ -284,10 +315,9 @@ Lambda 側にテーブルの権限とテーブル名を渡したところ、Clou
 
 ## やること
 
-- [ ] ダウンロード数の自動カウント。2回試して2回ともデプロイに失敗している
-      - 1回目: Lambda から DynamoDB を直接更新 → 循環参照
-      - 2回目: Lambda から AppSync 経由 → 原因未特定（ビルドログを見られていない）
-      - 次に試すなら、まずビルドログで失敗理由を確認する
+- [x] ダウンロード数の自動カウント（2026-09-11）
+      2回失敗したあと、ビルドログで原因を特定して解決。
+      1回目は循環参照、2回目は amplify/tsconfig.json が無く $amplify/* を解決できなかった。
 - [ ] カテゴリと並び順の設定（今は全件カテゴリ未設定・並び順100）
 - [ ] 独自ドメインを取ったら `Desktop/kintonePlugin/tools/set-homepage-url.mjs` の
       `SITE` を直して zip を作り直す

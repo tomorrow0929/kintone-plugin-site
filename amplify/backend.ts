@@ -2,11 +2,13 @@ import { defineBackend } from '@aws-amplify/backend'
 import { auth } from './auth/resource'
 import { data } from './data/resource'
 import { storage } from './storage/resource'
+import { incrementDownload } from './functions/increment-download/resource'
 
 const backend = defineBackend({
   auth,
   data,
   storage,
+  incrementDownload,
 })
 
 // ===== 一般の人が勝手にサインアップできないようにする =====
