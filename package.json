@@ -22,6 +22,7 @@
   "devDependencies": {
     "@aws-amplify/backend": "^1.4.0",
     "@aws-amplify/backend-cli": "^1.2.9",
+    "@types/node": "^22.20.2",
     "@vitejs/plugin-react": "^4.3.4",
     "aws-cdk-lib": "^2.166.0",
     "constructs": "^10.4.2",

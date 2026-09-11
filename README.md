@@ -289,8 +289,16 @@ Could not resolve "$amplify/env/increment-download"
 [FailedToBundleAsset] ... esbuild ... exited with status 1
 ```
 
+**`@types/node` も要る。** ampx が生成する env ファイルは `process.env` を使うので、
+入っていないと型チェックで落ちる:
+
+```
+.amplify/generated/env/<関数名>.ts:2:20 - error TS2580: Cannot find name 'process'.
+```
+
 このプロジェクトは `npm create amplify` を使わず手で作ったため、
-標準では付いてくるこのファイルが無く、Lambda の追加で2回デプロイに失敗した。
+標準では付いてくる `amplify/tsconfig.json` と `@types/node` の両方が無く、
+Lambda の追加で3回デプロイに失敗した。
 
 なお `.amplify/generated/` は ampx を動かすまで存在しないので、
 ローカルの `tsc` はハンドラを解決できない。
