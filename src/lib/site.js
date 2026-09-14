@@ -3,10 +3,14 @@
  *
  * プラグイン本体は無料のまま配布し、
  * 「設定・帳票作成を代行する」有料サービスへの導線だけをここで一元管理します。
- * 独自ドメインに移したときは BUSINESS_SITE の1行を書き換えるだけで済みます。
+ * ドメインを変えるときは、この上2行を書き換えるだけで全ページに反映されます。
  */
 
-export const BUSINESS_SITE = 'https://main.d3k8o4bbbbo4ke.amplifyapp.com'
+/** このサイト自身のURL（canonical・構造化データ・sitemap で使用） */
+export const SITE_URL = 'https://plugins.to-morrow.net'
+
+/** 事業サイトのURL */
+export const BUSINESS_SITE = 'https://to-morrow.net'
 
 export const links = {
   about: `${BUSINESS_SITE}/`,
@@ -28,3 +32,7 @@ export const prices = {
   setup: '19,800円',
   app: '49,800円',
 }
+
+/** サイト名（構造化データで使用） */
+export const SITE_NAME = 'to.Morrow kintone プラグイン'
+export const PUBLISHER_NAME = 'to.Morrow'

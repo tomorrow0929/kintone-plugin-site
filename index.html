@@ -4,23 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <script>
+      // 旧URL（amplifyapp.com）で開かれたら、新しいドメインへ移します。
+      // Amplifyコンソール側の301リダイレクトが本命で、これはその保険です。
+      (function () {
+        if (location.hostname.indexOf('.amplifyapp.com') !== -1) {
+          location.replace(
+            'https://plugins.to-morrow.net' + location.pathname + location.search + location.hash
+          )
+        }
+      })()
+    </script>
+
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#01545a" />
 
     <!--
-      ここに書いたタイトル・説明文は「最初に読み込まれる既定値」です。
-      各プラグインの詳細ページでは src/lib/meta.js が中身を差し替えます。
-      36本すべてが同じタイトルのままだと、検索結果で区別されないためです。
+      ここに書いたタイトル・説明文・canonical は「最初に読み込まれる既定値」です。
+      各ページでは src/lib/meta.js が中身を差し替えます。
+      36本すべてが同じタイトル・同じ canonical のままだと、
+      検索エンジンから見て区別がつかず、個別のプラグイン名で拾われません。
     -->
     <title>kintone 無料プラグイン一覧 | to.Morrow</title>
     <meta
       name="description"
       content="帳票出力・Excel出力・ガントチャート・一括更新など、業務で使える kintone プラグインをすべて無料で配布しています。会員登録不要、利用期限・出力枚数の制限もありません。"
     />
-    <!-- ↓ 独自ドメインを設定したら、このURLを書き換えてください -->
-    <link rel="canonical" href="https://main.d3cec5zpyigwxh.amplifyapp.com/" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://plugins.to-morrow.net/" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="to.Morrow kintone プラグイン" />
@@ -29,8 +42,26 @@
       property="og:description"
       content="業務で使える kintone プラグインを、すべて無料・会員登録不要で配布しています。"
     />
-    <meta property="og:url" content="https://main.d3cec5zpyigwxh.amplifyapp.com/" />
+    <meta property="og:url" content="https://plugins.to-morrow.net/" />
+    <meta property="og:image" content="https://plugins.to-morrow.net/apple-touch-icon.png" />
+    <meta property="og:locale" content="ja_JP" />
     <meta name="twitter:card" content="summary" />
+
+    <!-- 事業サイトとの関係を検索エンジンに伝える -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "to.Morrow kintone プラグイン",
+        "url": "https://plugins.to-morrow.net/",
+        "inLanguage": "ja",
+        "publisher": {
+          "@type": "Organization",
+          "name": "to.Morrow",
+          "url": "https://to-morrow.net/"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

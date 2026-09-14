@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
+import { links } from '../lib/site.js'
 import './Header.css'
 
 export default function Header() {
@@ -12,7 +13,11 @@ export default function Header() {
         <NavLink to="/" end>
           プラグイン一覧
         </NavLink>
-        <a href="https://main.d3k8o4bbbbo4ke.amplifyapp.com/" target="_blank" rel="noreferrer">
+        {/* URLは src/lib/site.js にまとめています（ここに直接書かない） */}
+        <a href={links.services} target="_blank" rel="noreferrer">
+          料金・代行
+        </a>
+        <a href={links.about} target="_blank" rel="noreferrer">
           to.Morrow について
         </a>
       </nav>

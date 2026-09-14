@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   getPluginBySlug,
@@ -12,7 +12,7 @@ import { normalizeUsage } from '../lib/usage.js'
 import { normalizeCategory } from '../lib/category.js'
 import { usePageMeta } from '../lib/meta.js'
 import { trackDownload } from '../lib/analytics.js'
-import { links } from '../lib/site.js'
+import { links, SITE_URL, BUSINESS_SITE, PUBLISHER_NAME } from '../lib/site.js'
 import UsageSection from '../components/UsageSection.jsx'
 import ServiceCta from '../components/ServiceCta.jsx'
 import './PluginDetail.css'
@@ -32,12 +32,68 @@ export default function PluginDetail() {
   const [state, setState] = useState(isConfigured ? 'loading' : 'idle')
   const [downloading, setDownloading] = useState(false)
 
-  // 検索結果に出るタイトル・説明文をプラグインごとに変える。
-  // これをしないと36ページすべてが同じタイトルになり、検索で拾われません。
-  usePageMeta(
-    plugin ? `${plugin.name}（無料）| kintoneプラグイン | to.Morrow` : null,
-    plugin ? `${plugin.summary ?? ''} 無料・会員登録不要でダウンロードできます。` : null,
-  )
+  /**
+   * 構造化データ。
+   * 検索結果で「無料のアプリ」として認識されやすくなります。
+   * 評価（星）は実際のレビューがないので入れません。
+   * 実体のない評価を入れると Google のガイドライン違反になります。
+   */
+  const jsonLd = useMemo(() => {
+    if (!plugin) return null
+    const pageUrl = `${SITE_URL}/plugins/${plugin.slug}`
+    return [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: plugin.name,
+        alternateName: plugin.nameEn || undefined,
+        description: plugin.summary,
+        url: pageUrl,
+        applicationCategory: 'BusinessApplication',
+        applicationSubCategory: plugin.category || undefined,
+        operatingSystem: 'kintone',
+        softwareVersion: plugin.version,
+        fileSize: plugin.zipSize ? `${Math.round(plugin.zipSize / 1024)}KB` : undefined,
+        datePublished: plugin.releasedAt || undefined,
+        inLanguage: 'ja',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'JPY',
+          availability: 'https://schema.org/InStock',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: PUBLISHER_NAME,
+          url: BUSINESS_SITE,
+        },
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'kintone 無料プラグイン一覧',
+            item: `${SITE_URL}/`,
+          },
+          { '@type': 'ListItem', position: 2, name: plugin.name, item: pageUrl },
+        ],
+      },
+    ]
+  }, [plugin])
+
+  // 検索結果に出るタイトル・説明文・canonical をプラグインごとに変える。
+  // これをしないと36ページすべてが同じ扱いになり、検索で拾われません。
+  usePageMeta({
+    title: plugin ? `${plugin.name}（無料）| kintoneプラグイン | to.Morrow` : undefined,
+    description: plugin
+      ? `${plugin.summary ?? ''} 無料・会員登録不要でダウンロードできる kintone プラグインです。`
+      : undefined,
+    path: `/plugins/${slug}`,
+    jsonLd,
+  })
 
   useEffect(() => {
     if (!isConfigured) return
@@ -128,13 +184,15 @@ export default function PluginDetail() {
 
   return (
     <article className="detail">
-      <p className="detail__back">
-        <Link to="/">← プラグイン一覧</Link>
-      </p>
+      {/* パンくず。検索エンジンにも利用者にも位置を伝える */}
+      <nav className="detail__back" aria-label="パンくず">
+        <Link to="/">← kintone 無料プラグイン一覧</Link>
+        {plugin.category && <span className="detail__crumb">{plugin.category}</span>}
+      </nav>
 
       <header className="detail__header">
         <div className="detail__icon">
-          {iconUrl ? <img src={iconUrl} alt="" /> : <span aria-hidden="true">🧩</span>}
+          {iconUrl ? <img src={iconUrl} alt={`${plugin.name}のアイコン`} /> : <span aria-hidden="true">🧩</span>}
         </div>
         <div>
           <h1>{plugin.name}</h1>

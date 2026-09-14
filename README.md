@@ -3,8 +3,8 @@
 自作の kintone プラグインを無料で配布するサイト。
 プラグインの追加・更新は管理画面から行うので、コードを触る必要はない。
 
-- 本番: https://main.d3cec5zpyigwxh.amplifyapp.com/
-- 管理画面: https://main.d3cec5zpyigwxh.amplifyapp.com/admin
+- 本番: https://plugins.to-morrow.net/
+- 管理画面: https://plugins.to-morrow.net/admin
 - リポジトリ: https://github.com/tomorrow0929/kintone-plugin-site
 - ホスティング: AWS Amplify（アプリID `d3cec5zpyigwxh`）
 - プラグインのソース: `Desktop/kintonePlugin`（Git管理していないローカルのみ）

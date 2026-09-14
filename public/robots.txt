@@ -1,2 +1,7 @@
 User-agent: *
 Allow: /
+
+# 管理画面は検索結果に出さない（ログイン画面が晒されるのを防ぐため）
+Disallow: /admin
+
+Sitemap: https://plugins.to-morrow.net/sitemap.xml

@@ -5,6 +5,7 @@ import { isConfigured } from '../lib/amplify.js'
 import { formatBytes } from '../lib/format.js'
 import { normalizeCategory, sortCategories } from '../lib/category.js'
 import { usePageMeta } from '../lib/meta.js'
+import { SITE_URL, SITE_NAME, BUSINESS_SITE, PUBLISHER_NAME } from '../lib/site.js'
 import ServiceCta from '../components/ServiceCta.jsx'
 import './PluginList.css'
 
@@ -16,10 +17,50 @@ export default function PluginList() {
   const [state, setState] = useState(isConfigured ? 'loading' : 'idle')
   const [error, setError] = useState(null)
 
-  usePageMeta(
-    'kintone 無料プラグイン一覧 | to.Morrow',
-    '帳票出力・Excel出力・ガントチャート・一括更新など、業務で使える kintone プラグインをすべて無料で配布しています。会員登録不要、利用期限・出力枚数の制限もありません。',
-  )
+  /**
+   * 構造化データ。
+   * 「無料プラグインが何本あるサイトなのか」を検索エンジンに伝えます。
+   */
+  const jsonLd = useMemo(() => {
+    if (plugins.length === 0) return null
+    return [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'kintone 無料プラグイン一覧',
+        description: `to.Morrow が開発した kintone プラグイン ${plugins.length} 本を、すべて無料で配布しています。`,
+        url: `${SITE_URL}/`,
+        inLanguage: 'ja',
+        isPartOf: {
+          '@type': 'WebSite',
+          name: SITE_NAME,
+          url: `${SITE_URL}/`,
+          publisher: { '@type': 'Organization', name: PUBLISHER_NAME, url: BUSINESS_SITE },
+        },
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: plugins.length,
+          itemListElement: plugins.map((p, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: p.name,
+            url: `${SITE_URL}/plugins/${p.slug}`,
+          })),
+        },
+      },
+    ]
+  }, [plugins])
+
+  usePageMeta({
+    title:
+      plugins.length > 0
+        ? `kintone 無料プラグイン ${plugins.length}本｜すべて無料・登録不要 | to.Morrow`
+        : 'kintone 無料プラグイン一覧 | to.Morrow',
+    description:
+      '帳票出力・Excel出力・ガントチャート・一括更新など、業務で使える kintone プラグインをすべて無料で配布しています。会員登録不要、利用期限・出力枚数の制限もありません。',
+    path: '/',
+    jsonLd,
+  })
 
   useEffect(() => {
     if (!isConfigured) return
@@ -75,7 +116,7 @@ export default function PluginList() {
     <>
       <section className="hero">
         <h1>
-          kintone プラグイン
+          kintone 無料プラグイン
           {plugins.length > 0 && <span className="hero__count">全 {plugins.length} 本</span>}
         </h1>
         <p>

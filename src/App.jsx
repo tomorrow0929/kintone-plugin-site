@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import Header from './components/Header.jsx'
 import Footer from './components/Footer.jsx'
 import SetupNotice from './components/SetupNotice.jsx'
+import NoIndexRoute from './components/NoIndexRoute.jsx'
 import PluginList from './pages/PluginList.jsx'
 import PluginDetail from './pages/PluginDetail.jsx'
 import NotFound from './pages/NotFound.jsx'
@@ -27,9 +28,12 @@ export default function App() {
           <Route
             path="/admin/*"
             element={
-              <Suspense fallback={<p className="status">読み込み中…</p>}>
-                <Admin />
-              </Suspense>
+              // 管理画面は検索結果に出さない（NoIndexRoute が noindex を出します）
+              <NoIndexRoute title="管理画面 | to.Morrow">
+                <Suspense fallback={<p className="status">読み込み中…</p>}>
+                  <Admin />
+                </Suspense>
+              </NoIndexRoute>
             }
           />
           <Route path="*" element={<NotFound />} />
