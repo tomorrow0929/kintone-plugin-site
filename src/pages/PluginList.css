@@ -128,3 +128,37 @@
   font-size: 0.8rem;
   color: var(--muted);
 }
+
+/* 見出し横の本数。数そのものが「たくさんある」という説明になる */
+.hero__count {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 2px 14px;
+  border-radius: 999px;
+  background: #eaf4fb;
+  color: var(--brand-navy);
+  font-size: 0.9rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+/* 無料・登録不要など、他社の有料サービスとの違いを一目で示す */
+.hero__badges {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.hero__badges li {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #eef7f0;
+  border: 1px solid #cfe7d6;
+  color: var(--success);
+  font-size: 0.82rem;
+  font-weight: 700;
+}

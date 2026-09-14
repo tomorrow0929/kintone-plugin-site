@@ -23,3 +23,17 @@
   /* 2行になったときに行の長さをそろえる（未対応ブラウザでは無視される） */
   text-wrap: balance;
 }
+
+/*
+ * 有料メニュー・規約などへのリンク列。
+ * .site-footer p の margin に負けないよう、同じ強さのセレクタで指定する。
+ */
+.site-footer p.site-footer__links {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+}
+
+.site-footer p.site-footer__links a {
+  color: var(--brand-navy);
+  white-space: nowrap;
+}

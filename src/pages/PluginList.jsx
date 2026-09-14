@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import { listPublishedPlugins, getFileUrl } from '../lib/api.js'
 import { isConfigured } from '../lib/amplify.js'
 import { formatBytes } from '../lib/format.js'
+import { normalizeCategory, sortCategories } from '../lib/category.js'
+import { usePageMeta } from '../lib/meta.js'
+import ServiceCta from '../components/ServiceCta.jsx'
 import './PluginList.css'
 
 export default function PluginList() {
@@ -13,6 +16,11 @@ export default function PluginList() {
   const [state, setState] = useState(isConfigured ? 'loading' : 'idle')
   const [error, setError] = useState(null)
 
+  usePageMeta(
+    'kintone 無料プラグイン一覧 | to.Morrow',
+    '帳票出力・Excel出力・ガントチャート・一括更新など、業務で使える kintone プラグインをすべて無料で配布しています。会員登録不要、利用期限・出力枚数の制限もありません。',
+  )
+
   useEffect(() => {
     if (!isConfigured) return
     let cancelled = false
@@ -21,7 +29,8 @@ export default function PluginList() {
       try {
         const list = await listPublishedPlugins()
         if (cancelled) return
-        setPlugins(list)
+        // カテゴリの表記ゆれ（「〜」と「〜系」）をここでそろえる
+        setPlugins(list.map((p) => ({ ...p, category: normalizeCategory(p.category) })))
         setState('done')
 
         // アイコンのURLは後から個別に解決する
@@ -45,7 +54,7 @@ export default function PluginList() {
   }, [])
 
   const categories = useMemo(
-    () => ['すべて', ...new Set(plugins.map((p) => p.category).filter(Boolean))],
+    () => ['すべて', ...sortCategories([...new Set(plugins.map((p) => p.category).filter(Boolean))])],
     [plugins],
   )
 
@@ -65,11 +74,22 @@ export default function PluginList() {
   return (
     <>
       <section className="hero">
-        <h1>kintone プラグイン</h1>
+        <h1>
+          kintone プラグイン
+          {plugins.length > 0 && <span className="hero__count">全 {plugins.length} 本</span>}
+        </h1>
         <p>
-          to.Morrow が開発した kintone プラグインを<strong>無料</strong>で配布しています。
+          to.Morrow が開発した kintone プラグインを<strong>すべて無料</strong>で配布しています。
           ダウンロードして、kintone の「プラグイン」画面から読み込んでご利用ください。
         </p>
+        {/* 他社の有料サービスと比べたときに、何が無いのかを先に書いておく */}
+        <ul className="hero__badges">
+          <li>無料</li>
+          <li>会員登録不要</li>
+          <li>出力枚数の制限なし</li>
+          <li>利用期限なし</li>
+          <li>商用利用可</li>
+        </ul>
       </section>
 
       {state === 'loading' && <p className="status">読み込み中…</p>}
@@ -84,6 +104,8 @@ export default function PluginList() {
 
       {state === 'done' && (
         <>
+          <ServiceCta variant="banner" />
+
           <div className="filters">
             <input
               type="search"
