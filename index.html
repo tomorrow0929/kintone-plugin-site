@@ -16,8 +16,21 @@
       })()
     </script>
 
+    <!--
+      検索結果に出るアイコン（ファビコン）。
+      Google は「48pxの倍数の正方形」を求めるため、48x48 を含む .ico と
+      192x192 の PNG を申告している。
+      sizes は実際に入っているサイズを正しく書くこと。
+      favicon.ico の中身は 16x16 / 32x32 / 48x48 の3つ。
+      以前ここを sizes="32x32" と書いていて、48px の候補が無いように見えていた。
+
+      ※ Google はサイトの「トップページ」の申告を見て、そのサイト全体の
+        アイコンを決める。個別ページに書いても意味がない。
+        反映はトップページが再クロールされたときで、数日〜数週間かかる。
+    -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/favicon-192x192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#01545a" />
 
