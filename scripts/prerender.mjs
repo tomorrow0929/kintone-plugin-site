@@ -79,6 +79,17 @@ try {
   console.log(`詳細ページの静的HTMLを書き出しました（${plugins.length} 本）`)
   console.log('確認: curl -s https://plugins.to-morrow.net/plugins/<slug> | head -c 400')
 } catch (error) {
-  console.warn(`prerender: 静的HTMLを書き出せませんでした（${error.message}）`)
-  console.warn('詳細ページは今までどおり SPA として表示されます。ビルドは続行します。')
+  /**
+   * ここで意図的にビルドを失敗させる。
+   *
+   * 書き換えルールを 404 系にしたので、plugins/<slug>.html が無いと
+   * /plugins/xxx は404になる。書き出しに失敗したままデプロイすると
+   * 36ページが全滅するので、デプロイさせずに前の版を生かしておく。
+   *
+   * ビルドが赤くなったら Amplify のビルドログでこのメッセージを確認し、
+   * DBに繋がる状態にしてから再デプロイする。
+   */
+  console.error(`prerender: 静的HTMLを書き出せませんでした（${error.message}）`)
+  console.error('このままデプロイすると詳細ページ36本が404になるため、ビルドを中止します。')
+  process.exit(1)
 }

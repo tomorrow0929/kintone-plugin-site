@@ -33,8 +33,12 @@ frontend:
         # プラグイン詳細ページを dist/plugins/<slug>.html として書き出す。
         # これが無いと、JavaScriptを実行しないクローラーには
         # 36本すべてが「トップページと同じ内容」に見えてしまいます。
-        # 失敗しても SPA のフォールバックで表示できるので、ビルドは止めない。
-        - node scripts/prerender.mjs || true
+        #
+        # sitemap と違って `|| true` を付けていません。
+        # 書き換えルールが 404 系なので、このファイルが無いまま
+        # デプロイすると /plugins/xxx が36本すべて404になります。
+        # 失敗したときはデプロイさせず、前の版を生かしておくのが安全です。
+        - node scripts/prerender.mjs
   artifacts:
     baseDirectory: dist
     files:
