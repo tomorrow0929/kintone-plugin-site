@@ -6,6 +6,7 @@ import {
   listAllPlugins,
   uploadFile,
   removeFile,
+  nextSortOrder,
 } from '../../lib/api.js'
 import { CANONICAL_CATEGORIES, normalizeCategory } from '../../lib/category.js'
 
@@ -18,7 +19,6 @@ const EMPTY = {
   version: '1.0.0',
   category: '',
   published: false,
-  sortOrder: 100,
   releasedAt: '',
 }
 
@@ -46,6 +46,13 @@ export default function AdminPluginForm({ mode }) {
    */
   const [usedCategories, setUsedCategories] = useState([])
 
+  /**
+   * 新規登録したときに入れる並び順（＝いまの最大値＋1）。
+   * 並び順は手で入れさせず、新しいものは必ず一番最後に置く。
+   * 順番を変えたいときは一覧の ↑↓ で行う。
+   */
+  const [newSortOrder, setNewSortOrder] = useState(1)
+
   useEffect(() => {
     let cancelled = false
 
@@ -66,6 +73,7 @@ export default function AdminPluginForm({ mode }) {
             .map(([value, count]) => ({ value, count }))
             .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, 'ja')),
         )
+        setNewSortOrder(nextSortOrder(all))
 
         if (mode !== 'edit') return
         const found = all.find((p) => p.id === id)
@@ -83,7 +91,6 @@ export default function AdminPluginForm({ mode }) {
           version: found.version ?? '',
           category: found.category ?? '',
           published: Boolean(found.published),
-          sortOrder: found.sortOrder ?? 100,
           releasedAt: found.releasedAt ?? '',
         })
         setLoadState('done')
@@ -158,7 +165,8 @@ export default function AdminPluginForm({ mode }) {
         version: values.version.trim(),
         category: values.category.trim() || null,
         published: values.published,
-        sortOrder: Number(values.sortOrder) || 100,
+        // 新規は一番最後に置く。編集では並び順に触らない（一覧の ↑↓ が持ち場）
+        ...(mode === 'create' ? { sortOrder: newSortOrder } : {}),
         releasedAt: values.releasedAt || null,
         zipKey,
         zipSize,
@@ -238,9 +246,6 @@ export default function AdminPluginForm({ mode }) {
         <div className="admin__row">
           <Field label="バージョン" error={errors.version} required>
             <input value={values.version} onChange={set('version')} placeholder="1.0.0" />
-          </Field>
-          <Field label="並び順" hint="小さいほど上">
-            <input type="number" value={values.sortOrder} onChange={set('sortOrder')} />
           </Field>
           <Field label="公開日" hint="任意">
             <input type="date" value={values.releasedAt} onChange={set('releasedAt')} />

@@ -307,3 +307,75 @@
   color: #8a5a10;
   line-height: 1.7;
 }
+
+/* ===== 一覧の上に出す注意書き ===== */
+.admin__note {
+  margin: 0 0 14px;
+  padding: 11px 15px;
+  background: #f4f8fa;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand-navy);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.admin__note strong {
+  color: var(--text);
+}
+
+/* ===== 並び順の上下ボタン =====
+   押すと sortOrder が書き換わり、公開サイトの並びも変わる。
+   番号と並べて置き、どの行がいま何番なのかが見えるようにしている。 */
+.admin__order {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.admin__ordernum {
+  min-width: 1.8em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.admin__movebtn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--brand-navy);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin__movebtn:hover:not(:disabled) {
+  border-color: var(--brand-navy);
+  background: #eaf4fb;
+}
+
+.admin__movebtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* カテゴリ未設定 */
+.admin__empty {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* 正式ではないカテゴリ表記。一覧のどれを直せばよいか一目で分かるようにする */
+.tag--stray {
+  background: #fdf6e7;
+  color: #8a5a10;
+}

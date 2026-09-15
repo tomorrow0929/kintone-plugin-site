@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { readPluginZip } from '../../lib/readPluginZip.js'
-import { createPlugin, listAllPlugins, uploadFile } from '../../lib/api.js'
+import { createPlugin, listAllPlugins, uploadFile, nextSortOrder } from '../../lib/api.js'
 import { formatBytes } from '../../lib/format.js'
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
@@ -80,6 +80,19 @@ export default function AdminBulkImport() {
     setImporting(true)
     const messages = []
 
+    /**
+     * 並び順は手で入れさせないので、既存の一番最後から続けて振る。
+     * 取り込みの途中で失敗しても番号が飛ぶだけで、順番は崩れない。
+     * ここで取り直しているのは、画面を開いたあとに別の端末から
+     * 追加されていた場合にも最後に置くため。
+     */
+    let order = 1
+    try {
+      order = nextSortOrder(await listAllPlugins())
+    } catch {
+      // 取れなければ 1 から。一覧の ↑↓ で直せる
+    }
+
     for (const row of targets) {
       try {
         const zipKey = `plugins/${row.slug}/${Date.now()}-${sanitize(row.file.name)}`
@@ -104,7 +117,8 @@ export default function AdminBulkImport() {
           iconKey,
           // 内容を確認してから公開してほしいので、最初は非公開で登録します
           published: false,
-          sortOrder: 100,
+          // 取り込んだ順に、既存の一番最後から続けて並べる
+          sortOrder: order++,
         })
         messages.push(`✅ ${row.name}`)
       } catch (e) {

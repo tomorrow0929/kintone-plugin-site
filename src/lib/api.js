@@ -140,3 +140,18 @@ function sortPlugins(list) {
     (a, b) => (a.sortOrder ?? 100) - (b.sortOrder ?? 100) || a.name.localeCompare(b.name, 'ja'),
   )
 }
+
+/**
+ * 次の並び順（一番最後）を返す。
+ *
+ * 並び順は手入力させず、一覧の ↑↓ だけで変えられるようにしている。
+ * 新しく登録したものは必ず最後に来るので、いまの最大値＋1を使う。
+ *
+ * 既存が全件100のように重複していても、最大値＋1にしておけば
+ * 「最後に追加したものが一番下」は保たれる。
+ * 番号がきれいに1から並ぶのは、一覧で一度 ↑↓ を押したとき。
+ */
+export function nextSortOrder(plugins) {
+  const max = plugins.reduce((acc, p) => Math.max(acc, p.sortOrder ?? 0), 0)
+  return max + 1
+}
