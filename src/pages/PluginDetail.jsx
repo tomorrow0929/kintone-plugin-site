@@ -9,10 +9,16 @@ import {
 import { isConfigured } from '../lib/amplify.js'
 import { formatBytes, formatDate } from '../lib/format.js'
 import { normalizeUsage } from '../lib/usage.js'
-import { normalizeCategory } from '../lib/category.js'
+import { normalizeCategory, withNormalizedCategory } from '../lib/category.js'
 import { usePageMeta } from '../lib/meta.js'
+import {
+  pluginPath,
+  pluginPageTitle,
+  pluginPageDescription,
+  pluginJsonLd,
+} from '../lib/plugin-meta.js'
 import { trackDownload } from '../lib/analytics.js'
-import { links, SITE_URL, BUSINESS_SITE, PUBLISHER_NAME } from '../lib/site.js'
+import { links } from '../lib/site.js'
 import UsageSection from '../components/UsageSection.jsx'
 import ServiceCta from '../components/ServiceCta.jsx'
 import './PluginDetail.css'
@@ -24,98 +30,73 @@ function isReportPlugin(plugin) {
   return /帳票|form-output|report|pdf|PDF/.test(target)
 }
 
+/**
+ * ビルド時にHTMLへ埋め込んだプラグイン情報を取り出す。
+ * 書き込んでいるのは scripts/prerender.mjs です。
+ *
+ * これがあると、ページを開いた瞬間に本文を出せます（「読み込み中…」を挟まない）。
+ * 静的HTMLに本文が入っているのに、Reactが起動した直後に空白へ戻ってしまうと
+ * かえって見づらくなるため、最初の表示はこの値を使います。
+ * そのあと下の useEffect がDBの最新値で置き換えます。
+ */
+function readPrerendered(slug) {
+  if (typeof window === 'undefined') return null
+  const data = window.__PRERENDERED_PLUGIN__
+  if (!data || data.slug !== slug) return null
+  return withNormalizedCategory(data)
+}
+
 export default function PluginDetail() {
   const { slug } = useParams()
-  const [plugin, setPlugin] = useState(null)
+  const [plugin, setPlugin] = useState(() => readPrerendered(slug))
   const [related, setRelated] = useState([])
   const [iconUrl, setIconUrl] = useState(null)
-  const [state, setState] = useState(isConfigured ? 'loading' : 'idle')
+  const [state, setState] = useState(() => {
+    if (readPrerendered(slug)) return 'done'
+    return isConfigured ? 'loading' : 'idle'
+  })
   const [downloading, setDownloading] = useState(false)
 
-  /**
-   * 構造化データ。
-   * 検索結果で「無料のアプリ」として認識されやすくなります。
-   * 評価（星）は実際のレビューがないので入れません。
-   * 実体のない評価を入れると Google のガイドライン違反になります。
-   */
-  const jsonLd = useMemo(() => {
-    if (!plugin) return null
-    const pageUrl = `${SITE_URL}/plugins/${plugin.slug}`
-    return [
-      {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: plugin.name,
-        alternateName: plugin.nameEn || undefined,
-        description: plugin.summary,
-        url: pageUrl,
-        applicationCategory: 'BusinessApplication',
-        applicationSubCategory: plugin.category || undefined,
-        operatingSystem: 'kintone',
-        softwareVersion: plugin.version,
-        fileSize: plugin.zipSize ? `${Math.round(plugin.zipSize / 1024)}KB` : undefined,
-        datePublished: plugin.releasedAt || undefined,
-        inLanguage: 'ja',
-        offers: {
-          '@type': 'Offer',
-          price: '0',
-          priceCurrency: 'JPY',
-          availability: 'https://schema.org/InStock',
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: PUBLISHER_NAME,
-          url: BUSINESS_SITE,
-        },
-      },
-      {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          {
-            '@type': 'ListItem',
-            position: 1,
-            name: 'kintone 無料プラグイン一覧',
-            item: `${SITE_URL}/`,
-          },
-          { '@type': 'ListItem', position: 2, name: plugin.name, item: pageUrl },
-        ],
-      },
-    ]
-  }, [plugin])
+  // 構造化データ。中身は src/lib/plugin-meta.js にまとめてあり、
+  // ビルド時の静的HTML（scripts/prerender.mjs）とまったく同じものになります。
+  const jsonLd = useMemo(() => (plugin ? pluginJsonLd(plugin) : null), [plugin])
 
   // 検索結果に出るタイトル・説明文・canonical をプラグインごとに変える。
   // これをしないと36ページすべてが同じ扱いになり、検索で拾われません。
   usePageMeta({
-    title: plugin ? `${plugin.name}（無料）| kintoneプラグイン | to.Morrow` : undefined,
-    description: plugin
-      ? `${plugin.summary ?? ''} 無料・会員登録不要でダウンロードできる kintone プラグインです。`
-      : undefined,
-    path: `/plugins/${slug}`,
+    title: plugin ? pluginPageTitle(plugin) : undefined,
+    description: plugin ? pluginPageDescription(plugin) : undefined,
+    path: pluginPath(slug),
     jsonLd,
   })
 
   useEffect(() => {
     if (!isConfigured) return
     let cancelled = false
-    setState('loading')
+
+    // 埋め込み済みの内容があれば、それを出したまま裏で最新を取りに行く。
+    const seeded = readPrerendered(slug)
+    setPlugin(seeded)
+    setState(seeded ? 'done' : 'loading')
 
     ;(async () => {
       try {
         const found = await getPluginBySlug(slug)
         if (cancelled) return
         if (!found || !found.published) {
+          // DBに無い・非公開になった場合はDB側を正とする
           setState('notfound')
           return
         }
-        setPlugin({ ...found, category: normalizeCategory(found.category) })
+        setPlugin(withNormalizedCategory(found))
         setState('done')
         if (found.iconKey) {
           const url = await getFileUrl(found.iconKey).catch(() => null)
           if (!cancelled) setIconUrl(url)
         }
       } catch {
-        if (!cancelled) setState('error')
+        // 通信に失敗しただけなら、埋め込み済みの内容を消さない
+        if (!cancelled && !seeded) setState('error')
       }
     })()
 

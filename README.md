@@ -76,6 +76,13 @@ kintone-plugin-site/
 │
 ├── public/                 ファビコン・logo.svg・robots.txt
 │
+├── scripts/                ★ ビルドの最後に走る（DBの内容からファイルを作る）
+│   ├── generate-sitemap.mjs    sitemap.xml
+│   ├── prerender.mjs           詳細ページを静的HTML化（下の「SEO」参照）
+│   └── lib/
+│       ├── plugin-data.mjs     ビルド時にDBから公開中の一覧を取る
+│       └── render-page.mjs     詳細ページのHTMLを組み立てる
+│
 └── src/
     ├── main.jsx / App.jsx
     │
@@ -84,7 +91,9 @@ kintone-plugin-site/
     │   ├── api.js             DynamoDB / S3 の読み書き
     │   ├── readPluginZip.js   zip から manifest.json を読む
     │   ├── usage.js           使い方データ（json）の形をそろえる
-    │   └── format.js          バイト数・日付の整形
+    │   ├── format.js          バイト数・日付の整形
+    │   ├── meta.js            title/description/canonical の差し替え
+    │   └── plugin-meta.js     ★ 詳細ページのSEO情報。ビルド用スクリプトと共用
     │
     ├── components/            Header / Footer / SetupNotice / UsageSection
     │
@@ -143,6 +152,21 @@ aws sts get-caller-identity   # 確認
 
 **プラグインの追加・更新に push は不要。** 管理画面から行う。
 
+ビルドの最後に、DBの内容から2つのファイルを作っている（`amplify.yml` 参照）。
+
+| コマンド | 作るもの |
+| --- | --- |
+| `node scripts/generate-sitemap.mjs` | `dist/sitemap.xml` |
+| `node scripts/prerender.mjs` | `dist/plugins/<slug>.html`（詳細ページの静的HTML） |
+
+どちらも DB に繋がらなければ**何も書き換えずに終了**する（`|| true`）。
+ビルドは止まらないが、その回のデプロイでは静的HTMLが更新されないので、
+ビルドログに `prerender:` の警告が出ていたら再デプロイする。
+
+手元でまとめて実行するときは `npm run build:all`。
+ただし `amplify_outputs.json` が本物でないと DB に繋がらないので、
+`npx ampx sandbox` を動かしているときだけ意味がある。
+
 ### 初回だけ必要だった設定（作り直すとき用のメモ）
 
 **1. サービスロール**
@@ -160,13 +184,28 @@ Amplify → Hosting → 書き換えとリダイレクト:
 ```json
 [
   {
-    "source": "</^[^.]+$|\\.(?!(css|gif|ico|jpg|jpeg|js|png|txt|svg|woff|woff2|ttf|map|json|webmanifest|webp)$)([^.]+$)/>",
-    "status": "200",
+    "source": "</^[^.]+$|\\.(?!(css|gif|ico|jpg|jpeg|js|png|txt|svg|woff|woff2|ttf|map|json|webmanifest|webp|html)$)([^.]+$)/>",
+    "status": "404-200",
     "target": "/index.html",
     "condition": null
   }
 ]
 ```
+
+> **⚠️ `status` は `200` ではなく `404-200`。**
+>
+> `200`（無条件の書き換え）だと、`/plugins/xxx` へのリクエストが
+> **ファイルの有無を見ずに** `/index.html` に書き換えられる。
+> `scripts/prerender.mjs` が作った `plugins/xxx.html` が一切使われず、
+> 36本すべてが「トップページと同じHTML」を返す状態に戻ってしまう。
+>
+> `404-200` は「見つからなかったときだけ書き換える」。
+> こうすると `/plugins/xxx` → `plugins/xxx.html` が素直に返り、
+> 静的HTMLが無いとき（プリレンダリングに失敗したビルド）は
+> 今までどおり SPA として表示される。**壊れ方が安全な側に倒れる。**
+>
+> 除外リストに `html` を足しているのは、`/plugins/xxx.html` を
+> 直接開いたときにも実ファイルを返すため。
 
 **3. 管理者アカウント**
 
@@ -239,6 +278,57 @@ slug は英語名から自動生成される。**公開後に変えるとURLが�
 使われなくなった画像は S3 からも消える。
 
 公開ページでは番号付きのステップで表示され、画像はクリックで拡大できる。
+
+---
+
+## SEO
+
+検索から来てもらうことが、このサイトの一番の役割。
+プラグイン36本＝36個の検索流入口なので、その36ページが
+「別々のページ」として扱われることが前提になる。
+
+### 詳細ページを静的HTMLにしている理由
+
+このサイトは `index.html` 1枚で全ページを描くので、
+**JavaScript を実行しないクローラー**から見た `/plugins/xxx` は、
+以前こうなっていた。
+
+| | 以前 | 今 |
+| --- | --- | --- |
+| `<title>` | 36本すべて「kintone 無料プラグイン一覧」 | プラグインごと |
+| `canonical` | `https://plugins.to-morrow.net/`（トップ） | そのページ自身 |
+| 本文 | `<div id="root"></div>` だけ | 見出し・説明・使い方まで入る |
+
+**canonical がトップを指しているのが致命的だった。** 検索エンジンに
+「この36本はすべてトップページの重複です」と伝えているのと同じで、
+個別のプラグイン名では検索結果に出ない。
+
+`scripts/prerender.mjs` がビルド時に `dist/plugins/<slug>.html` を書き出し、
+上の右列の状態にしている。URLは `/plugins/xxx` のまま変わらない
+（Amplify が拡張子なしのリクエストに `.html` を返すため。
+書き換えルールの `404-200` が前提なので、上の「SPA の書き換えルール」を必ず確認する）。
+
+### 直したら両方直すもの
+
+同じ内容を「React が描くとき」と「ビルド時に焼き込むとき」の2回作っている。
+食い違うと、クローラーが見るHTMLと利用者が見る画面がずれる。
+
+| 変えるもの | 直す場所 |
+| --- | --- |
+| タイトル・説明文・構造化データ | `src/lib/plugin-meta.js` **のみ**（両方が読んでいる） |
+| 料金・事業サイトへのリンク | `src/lib/site.js` **のみ**（両方が読んでいる） |
+| 詳細ページの本文の文言 | `src/pages/PluginDetail.jsx` と `scripts/lib/render-page.mjs` の**両方** |
+
+### 確認のしかた
+
+```bash
+# 静的HTMLが返っているか（title がプラグイン名なら成功）
+curl -s https://plugins.to-morrow.net/plugins/record-aggregation-plugin | grep -E '<title>|canonical'
+```
+
+Search Console の「URL検査」で、`Google が選択した正規 URL` が
+そのページ自身になっていることも確認する。
+トップページになっていたら、まだ書き換えルールが `200` のまま。
 
 ---
 
@@ -326,6 +416,8 @@ Amplify のビルド時には生成済みなので型チェックされる。
 - [x] ダウンロード数の自動カウント（2026-09-11）
       2回失敗したあと、ビルドログで原因を特定して解決。
       1回目は循環参照、2回目は amplify/tsconfig.json が無く $amplify/* を解決できなかった。
+- [x] 詳細ページの静的HTML化（2026-09-15）
+      canonical が36本すべてトップページを指していたのを解消。下の「SEO」参照。
 - [ ] カテゴリと並び順の設定（今は全件カテゴリ未設定・並び順100）
 - [ ] 独自ドメインを取ったら `Desktop/kintonePlugin/tools/set-homepage-url.mjs` の
       `SITE` を直して zip を作り直す

@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "sitemap": "node scripts/generate-sitemap.mjs",
+    "prerender": "node scripts/prerender.mjs",
+    "build:all": "npm run build && npm run sitemap && npm run prerender",
     "preview": "vite preview",
     "sandbox": "ampx sandbox",
     "seed": "node scripts/seed-plugins.mjs"
