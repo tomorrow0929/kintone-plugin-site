@@ -21,6 +21,7 @@ import { trackDownload } from '../lib/analytics.js'
 import { links } from '../lib/site.js'
 import UsageSection from '../components/UsageSection.jsx'
 import ServiceCta from '../components/ServiceCta.jsx'
+import FaqSection from '../components/FaqSection.jsx'
 import './PluginDetail.css'
 
 /** 帳票まわりのプラグインかどうか（有料メニューの出し分けに使う） */
@@ -267,6 +268,9 @@ export default function PluginDetail() {
           </ul>
         </section>
       )}
+
+      {/* 押す前に残っている不安をここで消す。中身は src/lib/faq.js（36本共通） */}
+      <FaqSection />
 
       <section className="detail__section detail__section--note">
         <h2>ご利用にあたって</h2>

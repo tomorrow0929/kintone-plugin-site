@@ -16,6 +16,7 @@
  * そちらを直す場所は1か所だけです。
  */
 import { links, prices } from '../../src/lib/site.js'
+import { PLUGIN_FAQ } from '../../src/lib/faq.js'
 import { normalizeUsage, isUsageEmpty } from '../../src/lib/usage.js'
 import { formatBytes, formatDate } from '../../src/lib/format.js'
 import {
@@ -206,6 +207,24 @@ function buildRelated(plugin, all) {
   return `<section class="detail__section"><h2>あわせて使えるプラグイン</h2><ul class="detail__related">${items}</ul></section>`
 }
 
+/** よくあるご質問（src/components/FaqSection.jsx と同じ。中身は faq.js から） */
+function buildFaq() {
+  const items = PLUGIN_FAQ.map(
+    (item) =>
+      `<div class="faq__item"><dt>${esc(item.q)}</dt><dd>${esc(item.a)}</dd></div>`,
+  ).join('')
+
+  return `<section class="faq">
+<h2>よくあるご質問</h2>
+<dl class="faq__list">${items}</dl>
+<p class="faq__more">ここに無い場合は <a href="${esc(links.support)}" target="_blank" rel="noreferrer">サポート範囲</a> ・ <a href="${esc(
+    links.terms,
+  )}" target="_blank" rel="noreferrer">利用規約</a> をご確認のうえ、<a href="${esc(
+    links.contact,
+  )}" target="_blank" rel="noreferrer">お問い合わせ</a> からお寄せください。</p>
+</section>`
+}
+
 /** 帳票まわりのプラグインかどうか（PluginDetail.jsx の isReportPlugin と同じ） */
 function isReportPlugin(plugin) {
   return /帳票|form-output|report|pdf|PDF/.test(`${plugin.slug ?? ''} ${plugin.name ?? ''}`)
@@ -261,6 +280,7 @@ ${buildUsage(usage)}
 </section>
 ${buildServiceCta(plugin, isReportPlugin(plugin))}
 ${buildRelated(plugin, all)}
+${buildFaq()}
 <section class="detail__section detail__section--note">
 <h2>ご利用にあたって</h2>
 <p>本プラグインは無料で提供しているため、動作保証・対応期限の確約（SLA）はありません。ご利用によって生じた損害について、to.Morrow は責任を負いかねます。まずはテスト環境でお試しいただくことをおすすめします。</p>

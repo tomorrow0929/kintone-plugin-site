@@ -93,9 +93,10 @@ kintone-plugin-site/
     │   ├── usage.js           使い方データ（json）の形をそろえる
     │   ├── format.js          バイト数・日付の整形
     │   ├── meta.js            title/description/canonical の差し替え
+    │   ├── faq.js             ★ よくあるご質問（36本共通）。画面と静的HTMLで共用
     │   └── plugin-meta.js     ★ 詳細ページのSEO情報。ビルド用スクリプトと共用
     │
-    ├── components/            Header / Footer / SetupNotice / UsageSection
+    ├── components/            Header / Footer / SetupNotice / UsageSection / FaqSection
     │
     ├── pages/
     │   ├── PluginList.jsx     一覧（トップ）。検索・カテゴリ絞り込み
@@ -337,6 +338,7 @@ slug は英語名から自動生成される。**公開後に変えるとURLが�
 | 変えるもの | 直す場所 |
 | --- | --- |
 | タイトル・説明文・構造化データ | `src/lib/plugin-meta.js` **のみ**（両方が読んでいる） |
+| よくあるご質問の文面 | `src/lib/faq.js` **のみ**（画面・静的HTML・構造化データが全部ここを読む） |
 | 料金・事業サイトへのリンク | `src/lib/site.js` **のみ**（両方が読んでいる） |
 | 詳細ページの本文の文言 | `src/pages/PluginDetail.jsx` と `scripts/lib/render-page.mjs` の**両方** |
 
