@@ -194,3 +194,116 @@
   align-items: center;
   padding-top: 6px;
 }
+
+/* ===== カテゴリの選択肢（AdminPluginForm） =====
+   カテゴリ欄は自由記述のままにしている。決め打ちの選択肢だけにすると
+   新しいカテゴリを増やせなくなるため。
+   代わりに、いま実際に使われている表記を入力欄の下に並べて、
+   押すだけで正式な表記が入るようにしている。 */
+.admin__fieldwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin__catopts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.admin__catlabel {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.admin__catlabel--warn {
+  margin-top: 6px;
+  color: #8a5a10;
+  font-weight: 700;
+}
+
+.admin__cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin__cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.admin__cat:hover {
+  border-color: var(--brand-navy);
+  color: var(--brand-navy);
+}
+
+.admin__cat.is-active {
+  background: var(--brand-navy);
+  border-color: var(--brand-navy);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* 何本そのカテゴリになっているか */
+.admin__cat em {
+  font-style: normal;
+  font-size: 0.72rem;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #eaf0f4;
+  color: var(--muted);
+}
+
+.admin__cat.is-active em {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+/* 正式ではない表記。押すと正式な表記に直して入る */
+.admin__cat--stray {
+  border-color: #e6c88a;
+  background: #fdf6e7;
+  color: #8a5a10;
+}
+
+.admin__cat--stray:hover {
+  border-color: #8a5a10;
+  color: #8a5a10;
+}
+
+.admin__cat--stray em {
+  background: #f2e3c2;
+  color: #8a5a10;
+}
+
+/* 選択中でも、正式ではない表記は警告色のままにする。
+   ここを通常の選択色（紺）にすると「この表記で問題ない」と読めてしまう。 */
+.admin__cat--stray.is-active {
+  background: #8a5a10;
+  border-color: #8a5a10;
+  color: #fff;
+}
+
+.admin__cat--stray.is-active em {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.admin__caterror {
+  font-size: 0.8rem;
+  color: #8a5a10;
+  line-height: 1.7;
+}

@@ -7,6 +7,7 @@ import {
   uploadFile,
   removeFile,
 } from '../../lib/api.js'
+import { CANONICAL_CATEGORIES, normalizeCategory } from '../../lib/category.js'
 
 const EMPTY = {
   slug: '',
@@ -37,14 +38,36 @@ export default function AdminPluginForm({ mode }) {
   const [errors, setErrors] = useState({})
   const [loadState, setLoadState] = useState(mode === 'edit' ? 'loading' : 'done')
 
+  /**
+   * 現在DBに入っているカテゴリと、その本数。
+   * カテゴリ欄は自由記述のままにしておきたいが、それだけだと
+   * 「データ連携・インポート」と「〜系」のような打ち間違いが混ざる。
+   * 入力欄の下に実在する選択肢を出して、押すだけで入れられるようにする。
+   */
+  const [usedCategories, setUsedCategories] = useState([])
+
   useEffect(() => {
-    if (mode !== 'edit') return
     let cancelled = false
 
     ;(async () => {
       try {
         const all = await listAllPlugins()
         if (cancelled) return
+
+        // カテゴリ別の本数を数える（非公開も含める。直す対象だから）
+        const counts = new Map()
+        for (const plugin of all) {
+          const value = (plugin.category ?? '').trim()
+          if (!value) continue
+          counts.set(value, (counts.get(value) ?? 0) + 1)
+        }
+        setUsedCategories(
+          [...counts.entries()]
+            .map(([value, count]) => ({ value, count }))
+            .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, 'ja')),
+        )
+
+        if (mode !== 'edit') return
         const found = all.find((p) => p.id === id)
         if (!found) {
           setLoadState('notfound')
@@ -197,12 +220,24 @@ export default function AdminPluginForm({ mode }) {
           <textarea rows={7} value={values.description} onChange={set('description')} />
         </Field>
 
+        {/* カテゴリは選択肢を下に並べるので、他の項目と横並びにせず単独で置く */}
+        <Field
+          label="カテゴリ"
+          hint="任意。一覧の絞り込みとカテゴリページ（/category/…）に使われます"
+          after={
+            <CategoryOptions
+              used={usedCategories}
+              value={values.category}
+              onPick={(name) => setValues((prev) => ({ ...prev, category: name }))}
+            />
+          }
+        >
+          <input value={values.category} onChange={set('category')} placeholder="表示・UI改善系" />
+        </Field>
+
         <div className="admin__row">
           <Field label="バージョン" error={errors.version} required>
             <input value={values.version} onChange={set('version')} placeholder="1.0.0" />
-          </Field>
-          <Field label="カテゴリ" hint="任意。絞り込みに使われます">
-            <input value={values.category} onChange={set('category')} placeholder="入力支援" />
           </Field>
           <Field label="並び順" hint="小さいほど上">
             <input type="number" value={values.sortOrder} onChange={set('sortOrder')} />
@@ -264,17 +299,98 @@ export default function AdminPluginForm({ mode }) {
   )
 }
 
-function Field({ label, hint, error, required, children }) {
+/**
+ * after は <label> の外に置く。
+ * ボタンを label の中に入れると、押したときに入力欄のフォーカスまで動いて
+ * 挙動が分かりにくくなるため。
+ */
+function Field({ label, hint, error, required, children, after }) {
   return (
-    <label className="admin__field">
-      <span className="admin__label">
-        {label}
-        {required && <em className="admin__required">必須</em>}
-      </span>
-      {children}
-      {hint && !error && <span className="admin__hint">{hint}</span>}
-      {error && <span className="admin__error">{error}</span>}
-    </label>
+    <div className="admin__fieldwrap">
+      <label className="admin__field">
+        <span className="admin__label">
+          {label}
+          {required && <em className="admin__required">必須</em>}
+        </span>
+        {children}
+        {hint && !error && <span className="admin__hint">{hint}</span>}
+        {error && <span className="admin__error">{error}</span>}
+      </label>
+      {after}
+    </div>
+  )
+}
+
+/**
+ * カテゴリ欄の下に出す選択肢。
+ *
+ * 自由記述は残したまま、押すだけで正式な表記が入るようにする。
+ * 正式な5つ（src/lib/category.js の CANONICAL_CATEGORIES）を先に並べ、
+ * そのあとに「DBに入っているが正式ではない表記」を分けて出す。
+ * 後者が見えていれば、直す対象がその場で分かる。
+ */
+function CategoryOptions({ used, value, onPick }) {
+  const current = value.trim()
+  const canonical = new Set(CANONICAL_CATEGORIES)
+
+  // DBにあるが正式ではないもの（表記ゆれ・古いカテゴリ）
+  const strays = used.filter((c) => !canonical.has(c.value))
+
+  // 正式なものの本数（DBに1本も無いものは0と出す）
+  const countOf = (name) => used.find((c) => c.value === name)?.count ?? 0
+
+  const isStray = current !== '' && !canonical.has(current)
+
+  return (
+    <div className="admin__catopts">
+      <span className="admin__catlabel">正式なカテゴリ（押すと入ります）</span>
+      <div className="admin__cats">
+        {CANONICAL_CATEGORIES.map((name) => (
+          <button
+            key={name}
+            type="button"
+            className={`admin__cat${current === name ? ' is-active' : ''}`}
+            onClick={() => onPick(name)}
+          >
+            {name}
+            <em>{countOf(name)}</em>
+          </button>
+        ))}
+      </div>
+
+      {strays.length > 0 && (
+        <>
+          <span className="admin__catlabel admin__catlabel--warn">
+            正式ではない表記（この表記のプラグインは直す対象です）
+          </span>
+          <div className="admin__cats">
+            {strays.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                className={`admin__cat admin__cat--stray${
+                  current === c.value ? ' is-active' : ''
+                }`}
+                onClick={() => onPick(normalizeCategory(c.value))}
+                title={`押すと「${normalizeCategory(c.value)}」が入ります`}
+              >
+                {c.value}
+                <em>{c.count}</em>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {isStray && (
+        <span className="admin__caterror">
+          「{current}」は正式なカテゴリではありません。
+          {canonical.has(normalizeCategory(current))
+            ? `「${normalizeCategory(current)}」が正しい表記です。`
+            : '上のボタンから選ぶか、表記を確認してください。'}
+        </span>
+      )}
+    </div>
   )
 }
 
