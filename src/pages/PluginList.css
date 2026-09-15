@@ -44,7 +44,11 @@
   gap: 8px;
 }
 
+/* カテゴリの切り替え。URLを持たせるため button から a（Link）に変えたので、
+   リンクの下線を消し、余白が効くように inline-block にしている。 */
 .chip {
+  display: inline-block;
+  text-decoration: none;
   padding: 7px 16px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -161,4 +165,58 @@
   color: var(--success);
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+/* カテゴリページの「一覧に戻る」 */
+.hero__back {
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+/* ===== ほかのカテゴリ（カテゴリページの下部） =====
+   1カテゴリだけ見て終わらせず、隣のカテゴリにも回ってもらう。
+   クローラーがカテゴリページ同士を行き来する道にもなる。 */
+.other-categories {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.other-categories > h2 {
+  margin: 0 0 14px;
+  font-size: 1.1rem;
+  color: var(--brand-navy);
+}
+
+.other-categories ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.other-categories li {
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.other-categories a {
+  font-weight: 700;
+  color: var(--brand-navy);
+  text-decoration: none;
+}
+
+.other-categories a:hover {
+  text-decoration: underline;
+}
+
+.other-categories span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.7;
 }

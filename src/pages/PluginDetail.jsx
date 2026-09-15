@@ -9,7 +9,7 @@ import {
 import { isConfigured } from '../lib/amplify.js'
 import { formatBytes, formatDate } from '../lib/format.js'
 import { normalizeUsage } from '../lib/usage.js'
-import { normalizeCategory, withNormalizedCategory } from '../lib/category.js'
+import { normalizeCategory, withNormalizedCategory, categoryPath } from '../lib/category.js'
 import { usePageMeta } from '../lib/meta.js'
 import {
   pluginPath,
@@ -169,7 +169,12 @@ export default function PluginDetail() {
       {/* パンくず。検索エンジンにも利用者にも位置を伝える */}
       <nav className="detail__back" aria-label="パンくず">
         <Link to="/">← kintone 無料プラグイン一覧</Link>
-        {plugin.category && <span className="detail__crumb">{plugin.category}</span>}
+        {/* カテゴリは同じ仲間のプラグインへ回れるリンクにする */}
+        {plugin.category && (
+          <Link to={categoryPath(plugin.category)} className="detail__crumb">
+            {plugin.category}
+          </Link>
+        )}
       </nav>
 
       <header className="detail__header">

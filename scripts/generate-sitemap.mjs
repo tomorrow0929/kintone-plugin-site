@@ -21,6 +21,8 @@ import { resolve } from 'node:path'
 
 import { fetchPublishedPlugins } from './lib/plugin-data.mjs'
 import { pluginUrl } from '../src/lib/plugin-meta.js'
+import { categorySlug, sortCategories } from '../src/lib/category.js'
+import { listUrl } from '../src/lib/list-meta.js'
 import { SITE_URL } from '../src/lib/site.js'
 
 const OUT_FILE = resolve('dist', 'sitemap.xml')
@@ -54,6 +56,14 @@ try {
     OUT_FILE,
     buildXml([
       { loc: `${SITE_URL}/`, priority: '1.0', changefreq: 'weekly' },
+      // カテゴリページ。トップと個別ページの中間の検索を受ける
+      ...sortCategories([...new Set(plugins.map((p) => p.category).filter(Boolean))])
+        .filter((c) => categorySlug(c))
+        .map((category) => ({
+          loc: listUrl(category),
+          priority: '0.9',
+          changefreq: 'weekly',
+        })),
       ...plugins.map((plugin) => ({
         // canonical と同じURLの作り方を使う（食い違うと評価が分散する）
         loc: pluginUrl(plugin.slug),

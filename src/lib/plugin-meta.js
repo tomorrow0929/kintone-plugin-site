@@ -14,6 +14,7 @@
  */
 import { SITE_URL, BUSINESS_SITE, PUBLISHER_NAME } from './site.js'
 import { PLUGIN_FAQ } from './faq.js'
+import { categoryPath } from './category.js'
 
 /** 詳細ページのパス（先頭の / から）。canonical と sitemap で共通に使う */
 export function pluginPath(slug) {
@@ -43,7 +44,7 @@ export function pluginPageDescription(plugin) {
  * 構造化データ（JSON-LD）。
  *
  * SoftwareApplication … 検索結果で「無料のアプリ」として認識されやすくなる
- * BreadcrumbList      … 検索結果に「一覧 > プラグイン名」の位置が出る
+ * BreadcrumbList      … 検索結果に「一覧 > カテゴリ > プラグイン名」の位置が出る
  * FAQPage             … ページ内の質問と回答の対応を機械的に伝える
  *
  * FAQPage について注意：2023年にGoogleがFAQのリッチリザルト（検索結果に
@@ -93,6 +94,8 @@ export function pluginJsonLd(plugin) {
     {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
+      // 一覧 > カテゴリ > プラグイン。カテゴリページを挟むことで、
+      // 検索結果の表示にも、サイトの構造の伝わり方にも効く。
       itemListElement: [
         {
           '@type': 'ListItem',
@@ -100,7 +103,22 @@ export function pluginJsonLd(plugin) {
           name: 'kintone 無料プラグイン一覧',
           item: `${SITE_URL}/`,
         },
-        { '@type': 'ListItem', position: 2, name: plugin.name, item: pageUrl },
+        ...(plugin.category
+          ? [
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: plugin.category,
+                item: `${SITE_URL}${categoryPath(plugin.category)}`,
+              },
+            ]
+          : []),
+        {
+          '@type': 'ListItem',
+          position: plugin.category ? 3 : 2,
+          name: plugin.name,
+          item: pageUrl,
+        },
       ],
     },
     {

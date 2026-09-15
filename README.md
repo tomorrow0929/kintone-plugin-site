@@ -94,12 +94,14 @@ kintone-plugin-site/
     │   ├── format.js          バイト数・日付の整形
     │   ├── meta.js            title/description/canonical の差し替え
     │   ├── faq.js             ★ よくあるご質問（36本共通）。画面と静的HTMLで共用
+    │   ├── category.js        カテゴリの表記ゆれ吸収＋URL（slug）と1行説明
+    │   ├── list-meta.js       ★ トップ・カテゴリページのSEO情報。ビルド用と共用
     │   └── plugin-meta.js     ★ 詳細ページのSEO情報。ビルド用スクリプトと共用
     │
     ├── components/            Header / Footer / SetupNotice / UsageSection / FaqSection
     │
     ├── pages/
-    │   ├── PluginList.jsx     一覧（トップ）。検索・カテゴリ絞り込み
+    │   ├── PluginList.jsx     一覧（トップ）とカテゴリページ。絞り込みはURLが持つ
     │   ├── PluginDetail.jsx   詳細・ダウンロード・導入手順
     │   ├── NotFound.jsx
     │   └── admin/
@@ -330,6 +332,35 @@ slug は英語名から自動生成される。**公開後に変えるとURLが�
 （Amplify が拡張子なしのリクエストに `.html` を返すため。
 書き換えルールの `404-200` が前提なので、上の「SPA の書き換えルール」を必ず確認する）。
 
+### カテゴリページ（/category/&lt;slug&gt;）
+
+以前はカテゴリの絞り込みが画面の中だけで完結していて、**URLが変わらなかった**。
+そのため「kintone ガントチャート 無料」のような
+「1本を探しているわけではないが、全36本の一覧でもない」検索に対して、
+出せるページがトップページしかなかった。
+
+いまはカテゴリごとに実URLがある。どのカテゴリを見ているかは
+画面の状態ではなく **URL が持つ**（`PluginList.jsx` が `useParams` で読む）。
+
+| カテゴリ | URL |
+| --- | --- |
+| 集計・レポート系 | `/category/report` |
+| データ連携・インポート系 | `/category/data-integration` |
+| 表示・UI改善系 | `/category/display-ui` |
+| データ入力・操作系 | `/category/input` |
+| 通知・アラート系 | `/category/notification` |
+
+**slug はURLに出るので、あとから変えるとリンクが切れる。**
+カテゴリ名を変えるときも slug はそのまま残すのが安全。
+カテゴリを増やしたら `src/lib/category.js` の `CATEGORY_META` に
+slug と1行説明を足す（足し忘れるとそのカテゴリのページは作られず、
+ビルドログに警告が出る）。
+
+トップページも同じ仕組みで静的HTML化してある。
+`dist/index.html` は SPA のフォールバックも兼ねているので、
+存在しないURLでは一瞬だけ一覧が見えるが、それらは404ステータスで返るため
+インデックスされず、React が起動すれば「見つかりません」に差し替わる。
+
 ### 直したら両方直すもの
 
 同じ内容を「React が描くとき」と「ビルド時に焼き込むとき」の2回作っている。
@@ -339,6 +370,9 @@ slug は英語名から自動生成される。**公開後に変えるとURLが�
 | --- | --- |
 | タイトル・説明文・構造化データ | `src/lib/plugin-meta.js` **のみ**（両方が読んでいる） |
 | よくあるご質問の文面 | `src/lib/faq.js` **のみ**（画面・静的HTML・構造化データが全部ここを読む） |
+| カテゴリのURL・1行説明 | `src/lib/category.js` の `CATEGORY_META` **のみ** |
+| トップ・カテゴリページのタイトル等 | `src/lib/list-meta.js` **のみ** |
+| 一覧カードの見た目・文言 | `src/pages/PluginList.jsx` と `scripts/lib/render-page.mjs` の**両方** |
 | 料金・事業サイトへのリンク | `src/lib/site.js` **のみ**（両方が読んでいる） |
 | 詳細ページの本文の文言 | `src/pages/PluginDetail.jsx` と `scripts/lib/render-page.mjs` の**両方** |
 
@@ -441,6 +475,9 @@ Amplify のビルド時には生成済みなので型チェックされる。
       1回目は循環参照、2回目は amplify/tsconfig.json が無く $amplify/* を解決できなかった。
 - [x] 詳細ページの静的HTML化（2026-09-15）
       canonical が36本すべてトップページを指していたのを解消。下の「SEO」参照。
+- [x] 詳細ページに「よくあるご質問」を追加（2026-09-15）
+- [x] カテゴリをURL化（2026-09-15）
+      `/category/<slug>` を5ページ新設。トップページも静的HTML化した。
 - [ ] カテゴリと並び順の設定（今は全件カテゴリ未設定・並び順100）
 - [ ] 独自ドメインを取ったら `Desktop/kintonePlugin/tools/set-homepage-url.mjs` の
       `SITE` を直して zip を作り直す

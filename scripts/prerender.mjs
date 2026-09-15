@@ -53,8 +53,8 @@ import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 
 import { fetchPublishedPlugins } from './lib/plugin-data.mjs'
-import { buildPage } from './lib/render-page.mjs'
-import { normalizeCategory } from '../src/lib/category.js'
+import { buildPage, buildListPage } from './lib/render-page.mjs'
+import { normalizeCategory, categorySlug, sortCategories } from '../src/lib/category.js'
 
 const DIST = resolve('dist')
 const TEMPLATE = resolve(DIST, 'index.html')
@@ -76,7 +76,40 @@ try {
     writeFileSync(outFile, buildPage(template, plugin, plugins), 'utf8')
   }
 
-  console.log(`詳細ページの静的HTMLを書き出しました（${plugins.length} 本）`)
+  // カテゴリページ。/category/<slug> でそのカテゴリだけを並べる。
+  const categories = sortCategories([...new Set(plugins.map((p) => p.category).filter(Boolean))])
+  let categoryCount = 0
+  for (const category of categories) {
+    const slug = categorySlug(category)
+    if (!slug) {
+      // src/lib/category.js の CATEGORY_META に無いカテゴリ。
+      // 新しいカテゴリを増やしたら、slug も足すこと。
+      console.warn(`prerender: slug が未定義のカテゴリを飛ばしました（${category}）`)
+      continue
+    }
+    const outFile = resolve(DIST, `category/${slug}.html`)
+    mkdirSync(dirname(outFile), { recursive: true })
+    writeFileSync(outFile, buildListPage(template, category, plugins), 'utf8')
+    categoryCount += 1
+  }
+
+  /**
+   * トップページ。
+   *
+   * dist/index.html は「SPAのフォールバック」も兼ねているので、
+   * ここを一覧の中身で上書きすると、存在しないURLでも一瞬だけ一覧が見える。
+   * ただしそれらは404ステータスで返るためインデックスされず、
+   * React が起動すれば「ページが見つかりません」に差し替わる。
+   * 一番大事なトップページに本文が無いほうが損失が大きいので、上書きする。
+   *
+   * template は最初に読み込んだものを使っているので、ここで上書きしても
+   * 上のループには影響しない。
+   */
+  writeFileSync(TEMPLATE, buildListPage(template, null, plugins), 'utf8')
+
+  console.log(
+    `静的HTMLを書き出しました（詳細 ${plugins.length} 本／カテゴリ ${categoryCount} 件／トップ 1 件）`,
+  )
   console.log('確認: curl -s https://plugins.to-morrow.net/plugins/<slug> | head -c 400')
 } catch (error) {
   /**

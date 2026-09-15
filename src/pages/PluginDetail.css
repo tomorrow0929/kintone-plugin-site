@@ -180,7 +180,10 @@
 }
 
 /* パンくずのカテゴリ表示 */
+/* パンくずのカテゴリ。span からカテゴリページへのリンクに変えたので、
+   下線を消して従来と同じタグの見た目を保つ。 */
 .detail__crumb {
+  display: inline-block;
   margin-left: 10px;
   padding: 2px 10px;
   border-radius: 999px;
@@ -188,4 +191,9 @@
   color: var(--brand-navy);
   font-size: 0.78rem;
   font-weight: 700;
+  text-decoration: none;
+}
+
+.detail__crumb:hover {
+  background: #d8ebf8;
 }

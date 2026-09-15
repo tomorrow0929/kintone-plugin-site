@@ -24,6 +24,13 @@ export default function App() {
         {!isConfigured && <SetupNotice />}
         <Routes>
           <Route path="/" element={<PluginList />} />
+          {/*
+            カテゴリページ。描くのはトップと同じ PluginList で、
+            どのカテゴリかは URL（slug）が持つ。
+            実URLにしておくと「kintone ガントチャート 無料」のような
+            中間の検索を受けられる（トップと個別ページの間が埋まる）。
+          */}
+          <Route path="/category/:slug" element={<PluginList />} />
           <Route path="/plugins/:slug" element={<PluginDetail />} />
           <Route
             path="/admin/*"

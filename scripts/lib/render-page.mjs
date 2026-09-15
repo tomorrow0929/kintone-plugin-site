@@ -16,6 +16,14 @@
  * そちらを直す場所は1か所だけです。
  */
 import { links, prices } from '../../src/lib/site.js'
+import { categoryPath, categoryLead, sortCategories } from '../../src/lib/category.js'
+import {
+  listPath,
+  listUrl,
+  listPageTitle,
+  listPageDescription,
+  listPageJsonLd,
+} from '../../src/lib/list-meta.js'
 import { PLUGIN_FAQ } from '../../src/lib/faq.js'
 import { normalizeUsage, isUsageEmpty } from '../../src/lib/usage.js'
 import { formatBytes, formatDate } from '../../src/lib/format.js'
@@ -63,12 +71,11 @@ function replaceInHead(html, pattern, tag) {
   return html.replace('</head>', `  ${tag}\n  </head>`)
 }
 
-/** テンプレートの head を、このプラグイン用の内容に差し替える */
-function buildHead(html, plugin) {
-  const title = pluginPageTitle(plugin)
-  const description = pluginPageDescription(plugin)
-  const url = pluginUrl(plugin.slug)
-
+/**
+ * テンプレートの head を、そのページ用の内容に差し替える。
+ * 詳細ページ・トップ・カテゴリページで共用する。
+ */
+function buildHead(html, { title, description, url, jsonLd }) {
   let out = html
   out = replaceInHead(out, /<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`)
   out = replaceInHead(
@@ -103,11 +110,13 @@ function buildHead(html, plugin) {
    * 起動時にこれを取り除いて自分のものを入れ直します。
    * この目印が無いと同じ構造化データが2つ並びます。
    */
-  const jsonLd = `<script type="application/ld+json" data-page-jsonld="1">${jsonForScript(
-    pluginJsonLd(plugin),
+  if (!jsonLd) return out
+
+  const tag = `<script type="application/ld+json" data-page-jsonld="1">${jsonForScript(
+    jsonLd,
   )}</script>`
 
-  return out.replace('</head>', `  ${jsonLd}\n  </head>`)
+  return out.replace('</head>', `  ${tag}\n  </head>`)
 }
 
 /** ヘッダー（src/components/Header.jsx と同じ見た目） */
@@ -247,7 +256,11 @@ function buildBody(plugin, all) {
 <main class="page">
 <article class="detail">
 <nav class="detail__back" aria-label="パンくず"><a href="/">← kintone 無料プラグイン一覧</a>${
-    plugin.category ? `<span class="detail__crumb">${esc(plugin.category)}</span>` : ''
+    plugin.category
+      ? `<a href="${esc(categoryPath(plugin.category))}" class="detail__crumb">${esc(
+          plugin.category,
+        )}</a>`
+      : ''
   }</nav>
 <header class="detail__header">
 <div class="detail__icon"><span aria-hidden="true">🧩</span></div>
@@ -298,7 +311,12 @@ ${buildFooter()}`
 
 /** 1本分のHTMLを組み立てる（このモジュールの入口） */
 export function buildPage(template, plugin, all) {
-  let html = buildHead(template, plugin)
+  let html = buildHead(template, {
+    title: pluginPageTitle(plugin),
+    description: pluginPageDescription(plugin),
+    url: pluginUrl(plugin.slug),
+    jsonLd: pluginJsonLd(plugin),
+  })
 
   // React に渡すデータ。type="module" のスクリプトより先に実行される。
   const seed = `<script>window.__PRERENDERED_PLUGIN__ = ${jsonForScript(plugin)}</script>`
@@ -311,3 +329,114 @@ export function buildPage(template, plugin, all) {
   return html
 }
 
+
+/** 一覧のカード1枚（src/pages/PluginList.jsx の plugin-card と同じ） */
+function buildCard(plugin) {
+  return `<li><a href="${esc(pluginPath(plugin.slug))}" class="plugin-card">
+<div class="plugin-card__icon"><span aria-hidden="true">🧩</span></div>
+<div class="plugin-card__body">
+<h2>${esc(plugin.name)}</h2>
+<p>${esc(plugin.summary)}</p>
+<div class="plugin-card__meta">${
+    plugin.category ? `<span class="tag">${esc(plugin.category)}</span>` : ''
+  }<span>v${esc(plugin.version)}</span>${
+    plugin.zipSize ? `<span>${esc(formatBytes(plugin.zipSize))}</span>` : ''
+  }</div>
+</div>
+</a></li>`
+}
+
+/** カテゴリの切り替えリンク（PluginList.jsx の filters__tabs と同じ） */
+function buildCategoryTabs(categories, activeCategory) {
+  const all = `<a href="/" class="chip${activeCategory ? '' : ' chip--active'}">すべて</a>`
+  const rest = categories
+    .map(
+      (c) =>
+        `<a href="${esc(categoryPath(c))}" class="chip${
+          activeCategory === c ? ' chip--active' : ''
+        }">${esc(c)}</a>`,
+    )
+    .join('')
+  return `<div class="filters"><div class="filters__tabs">${all}${rest}</div></div>`
+}
+
+/** カテゴリページ下部の「ほかのカテゴリ」 */
+function buildOtherCategories(categories, activeCategory) {
+  const others = categories.filter((c) => c !== activeCategory)
+  if (others.length === 0) return ''
+
+  const items = others
+    .map(
+      (c) =>
+        `<li><a href="${esc(categoryPath(c))}">${esc(c)}</a><span>${esc(
+          categoryLead(c),
+        )}</span></li>`,
+    )
+    .join('')
+
+  return `<section class="other-categories"><h2>ほかのカテゴリ</h2><ul>${items}</ul></section>`
+}
+
+/**
+ * トップページとカテゴリページのHTMLを組み立てる（このモジュールの入口）。
+ *
+ * category に null を渡すとトップ（全件）、カテゴリ名を渡すとそのカテゴリページ。
+ * 検索欄はJavaScriptが要るので静的HTMLには出さない。
+ * クローラーと、JSが動く前の利用者に必要なのは「一覧そのもの」なので、
+ * カードとカテゴリのリンクだけを先に出しておく。
+ *
+ * 文言は src/pages/PluginList.jsx から書き写したもの。
+ * 表示される文章を変えたときは両方を直すこと。
+ */
+export function buildListPage(template, category, allPlugins) {
+  const plugins = category ? allPlugins.filter((p) => p.category === category) : allPlugins
+  const categories = sortCategories([
+    ...new Set(allPlugins.map((p) => p.category).filter(Boolean)),
+  ])
+
+  let html = buildHead(template, {
+    title: listPageTitle(category, plugins.length),
+    description: listPageDescription(category, plugins),
+    url: listUrl(category),
+    jsonLd: listPageJsonLd(category, plugins),
+  })
+
+  const hero = category
+    ? `<section class="hero">
+<nav class="hero__back" aria-label="パンくず"><a href="/">← kintone 無料プラグイン一覧</a></nav>
+<h1>kintone ${esc(category)}の無料プラグイン<span class="hero__count">全 ${
+        plugins.length
+      } 本</span></h1>
+<p>${esc(categoryLead(category))}</p>
+<ul class="hero__badges"><li>無料</li><li>会員登録不要</li><li>出力枚数の制限なし</li><li>利用期限なし</li><li>商用利用可</li></ul>
+</section>`
+    : `<section class="hero">
+<h1>kintone 無料プラグイン<span class="hero__count">全 ${plugins.length} 本</span></h1>
+<p>to.Morrow が開発した kintone プラグインを<strong>すべて無料</strong>で配布しています。ダウンロードして、kintone の「プラグイン」画面から読み込んでご利用ください。</p>
+<ul class="hero__badges"><li>無料</li><li>会員登録不要</li><li>出力枚数の制限なし</li><li>利用期限なし</li><li>商用利用可</li></ul>
+</section>`
+
+  const banner = `<aside class="service-banner">
+<p class="service-banner__text"><strong>設定や帳票づくりでお困りですか？</strong><span>台紙の作成から項目の配置、動作確認までを代行しています（帳票作成代行 ${esc(
+    prices.report,
+  )}〜／ 初期設定代行 ${esc(prices.setup)}〜）。</span></p>
+<a class="button button--compact" href="${esc(
+    links.services,
+  )}" target="_blank" rel="noreferrer">料金を見る</a>
+</aside>`
+
+  const body = `${buildHeader()}
+<main class="page">
+${hero}
+${banner}
+${buildCategoryTabs(categories, category)}
+<ul class="plugin-grid">${plugins.map(buildCard).join('')}</ul>
+${category ? buildOtherCategories(categories, category) : ''}
+</main>
+${buildFooter()}`
+
+  // React に渡す一覧。カテゴリページでも全件を渡す（絞り込みはURLが決める）。
+  const seed = `<script>window.__PRERENDERED_LIST__ = ${jsonForScript(allPlugins)}</script>`
+
+  return html.replace('<div id="root"></div>', `${seed}\n    <div id="root">${body}</div>`)
+}

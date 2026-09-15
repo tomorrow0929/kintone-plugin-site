@@ -1,65 +1,81 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { listPublishedPlugins, getFileUrl } from '../lib/api.js'
 import { isConfigured } from '../lib/amplify.js'
 import { formatBytes } from '../lib/format.js'
-import { normalizeCategory, sortCategories } from '../lib/category.js'
+import {
+  normalizeCategory,
+  sortCategories,
+  categoryFromSlug,
+  categoryPath,
+  categoryLead,
+} from '../lib/category.js'
 import { usePageMeta } from '../lib/meta.js'
-import { SITE_URL, SITE_NAME, BUSINESS_SITE, PUBLISHER_NAME } from '../lib/site.js'
+import { listPath, listPageTitle, listPageDescription, listPageJsonLd } from '../lib/list-meta.js'
 import ServiceCta from '../components/ServiceCta.jsx'
 import './PluginList.css'
 
+/**
+ * ビルド時にHTMLへ埋め込んだ一覧を取り出す（scripts/prerender.mjs が書き込む）。
+ * 静的HTMLに一覧が入っているのに、React起動直後に「読み込み中…」へ
+ * 戻ってしまうと見づらいため、最初の表示はこれを使う。
+ */
+function readPrerenderedList() {
+  if (typeof window === 'undefined') return null
+  const list = window.__PRERENDERED_LIST__
+  if (!Array.isArray(list) || list.length === 0) return null
+  return list.map((p) => ({ ...p, category: normalizeCategory(p.category) }))
+}
+
+/**
+ * プラグイン一覧。
+ *
+ * トップ（/）と、カテゴリページ（/category/<slug>）の両方をこの1つで描く。
+ * どのカテゴリを見ているかは**URLが持つ**（画面の状態としては持たない）。
+ * こうしないとカテゴリごとのURLが存在せず、
+ * 「kintone ガントチャート 無料」のような検索を受けるページが作れない。
+ */
 export default function PluginList() {
-  const [plugins, setPlugins] = useState([])
-  const [icons, setIcons] = useState({})
-  const [keyword, setKeyword] = useState('')
-  const [category, setCategory] = useState('すべて')
-  const [state, setState] = useState(isConfigured ? 'loading' : 'idle')
-  const [error, setError] = useState(null)
+  const { slug } = useParams()
+  const activeCategory = categoryFromSlug(slug)
 
   /**
-   * 構造化データ。
-   * 「無料プラグインが何本あるサイトなのか」を検索エンジンに伝えます。
+   * URLのカテゴリが存在しない場合（打ち間違い、カテゴリを廃止したあとの古いリンク）。
+   * 全件の一覧を出してしまうと、同じ内容のページがいくつも見えることになるので、
+   * 「見つかりません」を出して noindex にする。
+   * 本番では Amplify がこのURLに404ステータスを返すので、表示と食い違わない。
    */
-  const jsonLd = useMemo(() => {
-    if (plugins.length === 0) return null
-    return [
-      {
-        '@context': 'https://schema.org',
-        '@type': 'CollectionPage',
-        name: 'kintone 無料プラグイン一覧',
-        description: `to.Morrow が開発した kintone プラグイン ${plugins.length} 本を、すべて無料で配布しています。`,
-        url: `${SITE_URL}/`,
-        inLanguage: 'ja',
-        isPartOf: {
-          '@type': 'WebSite',
-          name: SITE_NAME,
-          url: `${SITE_URL}/`,
-          publisher: { '@type': 'Organization', name: PUBLISHER_NAME, url: BUSINESS_SITE },
-        },
-        mainEntity: {
-          '@type': 'ItemList',
-          numberOfItems: plugins.length,
-          itemListElement: plugins.map((p, i) => ({
-            '@type': 'ListItem',
-            position: i + 1,
-            name: p.name,
-            url: `${SITE_URL}/plugins/${p.slug}`,
-          })),
-        },
-      },
-    ]
-  }, [plugins])
+  const notFound = Boolean(slug && !activeCategory)
+
+  const [plugins, setPlugins] = useState(() => readPrerenderedList() ?? [])
+  const [icons, setIcons] = useState({})
+  const [keyword, setKeyword] = useState('')
+  const [state, setState] = useState(() => {
+    if (readPrerenderedList()) return 'done'
+    return isConfigured ? 'loading' : 'idle'
+  })
+  const [error, setError] = useState(null)
+
+  // このページに実際に並ぶもの（カテゴリで絞ったあと）。
+  // 構造化データにも同じ配列を渡す。画面に無いものを載せてはいけない。
+  const inCategory = useMemo(
+    () => (activeCategory ? plugins.filter((p) => p.category === activeCategory) : plugins),
+    [plugins, activeCategory],
+  )
+
+  const jsonLd = useMemo(
+    () => listPageJsonLd(activeCategory, inCategory),
+    [activeCategory, inCategory],
+  )
 
   usePageMeta({
-    title:
-      plugins.length > 0
-        ? `kintone 無料プラグイン ${plugins.length}本｜すべて無料・登録不要 | to.Morrow`
-        : 'kintone 無料プラグイン一覧 | to.Morrow',
-    description:
-      '帳票出力・Excel出力・ガントチャート・一括更新など、業務で使える kintone プラグインをすべて無料で配布しています。会員登録不要、利用期限・出力枚数の制限もありません。',
-    path: '/',
-    jsonLd,
+    title: notFound
+      ? 'カテゴリが見つかりません | to.Morrow'
+      : listPageTitle(activeCategory, inCategory.length),
+    description: notFound ? undefined : listPageDescription(activeCategory, inCategory),
+    path: notFound ? undefined : listPath(activeCategory),
+    jsonLd: notFound ? null : jsonLd,
+    noindex: notFound,
   })
 
   useEffect(() => {
@@ -82,7 +98,9 @@ export default function PluginList() {
         )
         if (!cancelled) setIcons(Object.fromEntries(entries))
       } catch (e) {
-        if (!cancelled) {
+        if (cancelled) return
+        // 埋め込み済みの一覧があるなら、通信の失敗で消さない
+        if (!readPrerenderedList()) {
           setError(e.message)
           setState('error')
         }
@@ -95,34 +113,60 @@ export default function PluginList() {
   }, [])
 
   const categories = useMemo(
-    () => ['すべて', ...sortCategories([...new Set(plugins.map((p) => p.category).filter(Boolean))])],
+    () => sortCategories([...new Set(plugins.map((p) => p.category).filter(Boolean))]),
     [plugins],
   )
 
   const visible = useMemo(() => {
     const word = keyword.trim().toLowerCase()
-    return plugins.filter((p) => {
-      const matchCategory = category === 'すべて' || p.category === category
-      const matchWord =
-        !word ||
-        [p.name, p.nameEn, p.summary, p.description]
-          .filter(Boolean)
-          .some((t) => t.toLowerCase().includes(word))
-      return matchCategory && matchWord
-    })
-  }, [plugins, keyword, category])
+    if (!word) return inCategory
+    return inCategory.filter((p) =>
+      [p.name, p.nameEn, p.summary, p.description]
+        .filter(Boolean)
+        .some((t) => t.toLowerCase().includes(word)),
+    )
+  }, [inCategory, keyword])
+
+  if (notFound) {
+    return (
+      <div className="status">
+        <h1>カテゴリが見つかりません</h1>
+        <p>
+          <Link to="/">kintone 無料プラグイン一覧へ</Link>
+        </p>
+      </div>
+    )
+  }
 
   return (
     <>
       <section className="hero">
-        <h1>
-          kintone 無料プラグイン
-          {plugins.length > 0 && <span className="hero__count">全 {plugins.length} 本</span>}
-        </h1>
-        <p>
-          to.Morrow が開発した kintone プラグインを<strong>すべて無料</strong>で配布しています。
-          ダウンロードして、kintone の「プラグイン」画面から読み込んでご利用ください。
-        </p>
+        {activeCategory ? (
+          <>
+            {/* パンくず。カテゴリページから一覧に戻れるようにする */}
+            <nav className="hero__back" aria-label="パンくず">
+              <Link to="/">← kintone 無料プラグイン一覧</Link>
+            </nav>
+            <h1>
+              kintone {activeCategory}の無料プラグイン
+              {inCategory.length > 0 && (
+                <span className="hero__count">全 {inCategory.length} 本</span>
+              )}
+            </h1>
+            <p>{categoryLead(activeCategory)}</p>
+          </>
+        ) : (
+          <>
+            <h1>
+              kintone 無料プラグイン
+              {plugins.length > 0 && <span className="hero__count">全 {plugins.length} 本</span>}
+            </h1>
+            <p>
+              to.Morrow が開発した kintone プラグインを<strong>すべて無料</strong>
+              で配布しています。 ダウンロードして、kintone の「プラグイン」画面から読み込んでご利用ください。
+            </p>
+          </>
+        )}
         {/* 他社の有料サービスと比べたときに、何が無いのかを先に書いておく */}
         <ul className="hero__badges">
           <li>無料</li>
@@ -156,17 +200,24 @@ export default function PluginList() {
               onChange={(e) => setKeyword(e.target.value)}
               aria-label="キーワードで絞り込み"
             />
-            {categories.length > 1 && (
+            {categories.length > 0 && (
               <div className="filters__tabs">
+                {/*
+                  ボタンではなくリンクにしている。
+                  押すとURLが変わるので、絞り込んだ状態を共有・ブックマークできるうえ、
+                  検索エンジンがカテゴリページを見つけられる。
+                */}
+                <Link to="/" className={`chip${activeCategory ? '' : ' chip--active'}`}>
+                  すべて
+                </Link>
                 {categories.map((c) => (
-                  <button
+                  <Link
                     key={c}
-                    type="button"
-                    className={`chip${category === c ? ' chip--active' : ''}`}
-                    onClick={() => setCategory(c)}
+                    to={categoryPath(c)}
+                    className={`chip${activeCategory === c ? ' chip--active' : ''}`}
                   >
                     {c}
-                  </button>
+                  </Link>
                 ))}
               </div>
             )}
@@ -203,6 +254,23 @@ export default function PluginList() {
                 </li>
               ))}
             </ul>
+          )}
+
+          {/* カテゴリページからは、他のカテゴリへも回れるようにする */}
+          {activeCategory && categories.length > 1 && (
+            <section className="other-categories">
+              <h2>ほかのカテゴリ</h2>
+              <ul>
+                {categories
+                  .filter((c) => c !== activeCategory)
+                  .map((c) => (
+                    <li key={c}>
+                      <Link to={categoryPath(c)}>{c}</Link>
+                      <span>{categoryLead(c)}</span>
+                    </li>
+                  ))}
+              </ul>
+            </section>
           )}
         </>
       )}
