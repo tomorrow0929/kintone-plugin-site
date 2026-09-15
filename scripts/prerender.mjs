@@ -54,7 +54,7 @@ import { resolve, dirname } from 'node:path'
 
 import { fetchPublishedPlugins } from './lib/plugin-data.mjs'
 import { buildPage, buildListPage } from './lib/render-page.mjs'
-import { normalizeCategory, categorySlug, sortCategories } from '../src/lib/category.js'
+import { categorySlug, sortCategories } from '../src/lib/category.js'
 
 const DIST = resolve('dist')
 const TEMPLATE = resolve(DIST, 'index.html')
@@ -65,10 +65,8 @@ try {
   }
 
   const template = readFileSync(TEMPLATE, 'utf8')
-  const plugins = (await fetchPublishedPlugins()).map((p) => ({
-    ...p,
-    category: normalizeCategory(p.category),
-  }))
+  // カテゴリの表記ゆれは fetchPublishedPlugins の中でそろえてある
+  const plugins = await fetchPublishedPlugins()
 
   for (const plugin of plugins) {
     const outFile = resolve(DIST, `plugins/${plugin.slug}.html`)

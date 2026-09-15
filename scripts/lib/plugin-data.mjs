@@ -11,6 +11,8 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import { normalizeCategory } from '../../src/lib/category.js'
+
 /**
  * 公開中のプラグインを、一覧と同じ並び順で全件返す。
  *
@@ -21,6 +23,11 @@ import { resolve } from 'node:path'
  * 取得できないときは例外を投げます。呼び出し側で受け止めて、
  * 「何も書き換えずに終了する」ようにしてください。
  * 中途半端な結果でファイルを上書きするほうが害が大きいためです。
+ *
+ * カテゴリの表記ゆれ（「データ連携・インポート」と「〜系」）は、
+ * ここでそろえてから返します。呼び出し側それぞれで揃えていると、
+ * 片方だけ忘れて同じカテゴリが2つに割れます
+ * （実際、sitemap に data-integration が2回出ていました）。
  */
 export async function fetchPublishedPlugins() {
   const outputsPath = resolve('amplify_outputs.json')
@@ -55,7 +62,9 @@ export async function fetchPublishedPlugins() {
   }
 
   // 画面の一覧と同じ並び（src/lib/api.js の sortPlugins と同じ規則）
-  return published.sort(
-    (a, b) => (a.sortOrder ?? 100) - (b.sortOrder ?? 100) || a.name.localeCompare(b.name, 'ja'),
-  )
+  return published
+    .map((p) => ({ ...p, category: normalizeCategory(p.category) }))
+    .sort(
+      (a, b) => (a.sortOrder ?? 100) - (b.sortOrder ?? 100) || a.name.localeCompare(b.name, 'ja'),
+    )
 }
