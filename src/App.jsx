@@ -7,6 +7,7 @@ import NoIndexRoute from './components/NoIndexRoute.jsx'
 import PluginList from './pages/PluginList.jsx'
 import PluginDetail from './pages/PluginDetail.jsx'
 import NotFound from './pages/NotFound.jsx'
+import Security from './pages/Security.jsx'
 import { isConfigured } from './lib/amplify.js'
 
 // 管理画面はログイン用の部品が重いので、開いたときだけ読み込みます。
@@ -32,6 +33,7 @@ export default function App() {
           */}
           <Route path="/category/:slug" element={<PluginList />} />
           <Route path="/plugins/:slug" element={<PluginDetail />} />
+          <Route path="/security" element={<Security />} />
           <Route
             path="/admin/*"
             element={

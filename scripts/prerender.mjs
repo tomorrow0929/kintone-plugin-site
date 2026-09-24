@@ -53,7 +53,7 @@ import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 
 import { fetchPublishedPlugins } from './lib/plugin-data.mjs'
-import { buildPage, buildListPage } from './lib/render-page.mjs'
+import { buildPage, buildListPage, buildSecurityPage } from './lib/render-page.mjs'
 import { categorySlug, sortCategories } from '../src/lib/category.js'
 
 const DIST = resolve('dist')
@@ -92,6 +92,12 @@ try {
   }
 
   /**
+   * 「セキュリティについて」。DBの内容は使わない固定のページだが、
+   * 書き換えルールが404系なので、ファイルが無いと /security が404になる。
+   */
+  writeFileSync(resolve(DIST, 'security.html'), buildSecurityPage(template), 'utf8')
+
+  /**
    * トップページ。
    *
    * dist/index.html は「SPAのフォールバック」も兼ねているので、
@@ -106,7 +112,7 @@ try {
   writeFileSync(TEMPLATE, buildListPage(template, null, plugins), 'utf8')
 
   console.log(
-    `静的HTMLを書き出しました（詳細 ${plugins.length} 本／カテゴリ ${categoryCount} 件／トップ 1 件）`,
+    `静的HTMLを書き出しました（詳細 ${plugins.length} 本／カテゴリ ${categoryCount} 件／セキュリティ 1 件／トップ 1 件）`,
   )
   console.log('確認: curl -s https://plugins.to-morrow.net/plugins/<slug> | head -c 400')
 } catch (error) {

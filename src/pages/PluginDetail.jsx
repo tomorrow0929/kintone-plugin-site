@@ -300,6 +300,8 @@ export default function PluginDetail() {
           <a href={links.contact} target="_blank" rel="noreferrer">
             お問い合わせ
           </a>
+          {' ｜ '}
+          <Link to="/security">セキュリティについて</Link>
         </p>
       </section>
     </article>

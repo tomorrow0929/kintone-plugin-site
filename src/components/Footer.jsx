@@ -22,6 +22,8 @@ export default function Footer() {
           プライバシーポリシー
         </a>
         {' ｜ '}
+        <Link to="/security">セキュリティについて</Link>
+        {' ｜ '}
         <a href={links.contact} target="_blank" rel="noreferrer">
           お問い合わせ
         </a>

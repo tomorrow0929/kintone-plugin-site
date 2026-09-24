@@ -79,6 +79,7 @@ kintone-plugin-site/
 ├── scripts/                ★ ビルドの最後に走る（DBの内容からファイルを作る）
 │   ├── generate-sitemap.mjs    sitemap.xml
 │   ├── prerender.mjs           詳細ページを静的HTML化（下の「SEO」参照）
+│   ├── check-plugin-security.mjs  配布する zip の中身を検査（手で実行。ビルドでは走らない）
 │   └── lib/
 │       ├── plugin-data.mjs     ビルド時にDBから公開中の一覧を取る
 │       └── render-page.mjs     詳細ページのHTMLを組み立てる
@@ -94,6 +95,7 @@ kintone-plugin-site/
     │   ├── format.js          バイト数・日付の整形
     │   ├── meta.js            title/description/canonical の差し替え
     │   ├── faq.js             ★ よくあるご質問（36本共通）。画面と静的HTMLで共用
+    │   ├── security.js        ★ 「セキュリティについて」の文章。画面と静的HTMLで共用
     │   ├── category.js        カテゴリの表記ゆれ吸収＋URL（slug）と1行説明
     │   ├── list-meta.js       ★ トップ・カテゴリページのSEO情報。ビルド用と共用
     │   └── plugin-meta.js     ★ 詳細ページのSEO情報。ビルド用スクリプトと共用
@@ -103,6 +105,7 @@ kintone-plugin-site/
     ├── pages/
     │   ├── PluginList.jsx     一覧（トップ）とカテゴリページ。絞り込みはURLが持つ
     │   ├── PluginDetail.jsx   詳細・ダウンロード・導入手順
+    │   ├── Security.jsx       セキュリティについて（/security）
     │   ├── NotFound.jsx
     │   └── admin/
     │       ├── Admin.jsx            ログインとページ振り分け
@@ -257,6 +260,24 @@ kintone の zip は二重構造（`contents.zip` の中に `manifest.json`）な
 
 **取り込み直後は非公開。** 内容を確認してから一覧で「非公開」を押して公開に切り替える。
 
+### 公開する前に中身を検査する
+
+`/security` のページに「外部と通信しない」「CDNから読み込まない」と書いている。
+これが崩れていないかを、zip を上げる前に確かめる。
+
+```powershell
+node scripts/check-plugin-security.mjs "C:\Users\ノースハンド薬局\Desktop\kintonePlugin\_dist"
+```
+
+結果は `plugin-security-report.md` に出る（Git には入らない）。
+
+- **✖ 要対応** … manifest で外部URLを読み込んでいる／zip に `.ppk` が入っている。必ず直す。
+- **⚠ 要確認** … `fetch`・`innerHTML`・外部URLなどの候補。同梱ライブラリの中に出るだけなら問題ない。
+  自分で書いたファイル（`desktop.js` など）に出ていたら中身を見る。
+
+外部と通信するプラグインを出すときは、`src/lib/security.js` の「外部との通信」を書き換え、
+そのプラグインの説明にも通信先と送る内容を書く。
+
 ### 1件ずつ
 
 「+ 新規追加」から。zip とアイコンを個別に指定できる。
@@ -383,6 +404,7 @@ slug と1行説明を足す（足し忘れるとそのカテゴリのページ�
 | --- | --- |
 | タイトル・説明文・構造化データ | `src/lib/plugin-meta.js` **のみ**（両方が読んでいる） |
 | よくあるご質問の文面 | `src/lib/faq.js` **のみ**（画面・静的HTML・構造化データが全部ここを読む） |
+| セキュリティについての文面 | `src/lib/security.js` **のみ**（画面・静的HTMLの両方が読んでいる） |
 | カテゴリのURL・1行説明 | `src/lib/category.js` の `CATEGORY_META` **のみ** |
 | トップ・カテゴリページのタイトル等 | `src/lib/list-meta.js` **のみ** |
 | 一覧カードの見た目・文言 | `src/pages/PluginList.jsx` と `scripts/lib/render-page.mjs` の**両方** |

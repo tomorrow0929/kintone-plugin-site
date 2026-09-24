@@ -15,7 +15,7 @@
  * タイトル・説明文・構造化データは src/lib/plugin-meta.js にまとめてあるので、
  * そちらを直す場所は1か所だけです。
  */
-import { links, prices } from '../../src/lib/site.js'
+import { links, prices, SITE_URL } from '../../src/lib/site.js'
 import { categoryPath, categoryLead, sortCategories } from '../../src/lib/category.js'
 import {
   listPath,
@@ -25,6 +25,16 @@ import {
   listPageJsonLd,
 } from '../../src/lib/list-meta.js'
 import { PLUGIN_FAQ } from '../../src/lib/faq.js'
+import {
+  SECURITY_PATH,
+  SECURITY_TITLE,
+  SECURITY_DESCRIPTION,
+  SECURITY_LEAD,
+  SECURITY_POINTS,
+  SECURITY_SECTIONS,
+  SECURITY_UPDATED_AT,
+  splitLinks,
+} from '../../src/lib/security.js'
 import { normalizeUsage, isUsageEmpty } from '../../src/lib/usage.js'
 import { formatBytes, formatDate } from '../../src/lib/format.js'
 import {
@@ -139,6 +149,7 @@ function buildFooter() {
 <a href="${esc(links.support)}" target="_blank" rel="noreferrer">サポート範囲</a> ｜
 <a href="${esc(links.terms)}" target="_blank" rel="noreferrer">利用規約</a> ｜
 <a href="${esc(links.privacy)}" target="_blank" rel="noreferrer">プライバシーポリシー</a> ｜
+<a href="/security">セキュリティについて</a> ｜
 <a href="${esc(links.contact)}" target="_blank" rel="noreferrer">お問い合わせ</a>
 </p>
 <p>&copy; ${new Date().getFullYear()} to.Morrow</p>
@@ -302,7 +313,7 @@ ${buildFaq()}
     links.terms,
   )}" target="_blank" rel="noreferrer">利用規約</a> ｜ <a href="${esc(
     links.contact,
-  )}" target="_blank" rel="noreferrer">お問い合わせ</a></p>
+  )}" target="_blank" rel="noreferrer">お問い合わせ</a> ｜ <a href="/security">セキュリティについて</a></p>
 </section>
 </article>
 </main>
@@ -439,4 +450,66 @@ ${buildFooter()}`
   const seed = `<script>window.__PRERENDERED_LIST__ = ${jsonForScript(allPlugins)}</script>`
 
   return html.replace('<div id="root"></div>', `${seed}\n    <div id="root">${body}</div>`)
+}
+
+/** [表示する文字](キー) をリンクにしたHTML（src/pages/Security.jsx の renderText と同じ） */
+function securityText(text) {
+  return splitLinks(text, links)
+    .map((part) => {
+      if (typeof part === 'string') return esc(part)
+      const target = part.external ? ' target="_blank" rel="noreferrer"' : ''
+      return `<a href="${esc(part.href)}"${target}>${esc(part.label)}</a>`
+    })
+    .join('')
+}
+
+function securityBlock(block) {
+  if (block.p) return `<p>${securityText(block.p)}</p>`
+  const tag = block.ol ? 'ol' : 'ul'
+  const items = (block.ol ?? block.ul).map((item) => `<li>${securityText(item)}</li>`).join('')
+  return `<${tag}>${items}</${tag}>`
+}
+
+/**
+ * 「セキュリティについて」ページのHTMLを組み立てる（このモジュールの入口）。
+ *
+ * 文章は src/lib/security.js にあり、React 側（src/pages/Security.jsx）と共用。
+ * ここでは並べ方だけを Security.jsx に合わせている。
+ */
+export function buildSecurityPage(template) {
+  const html = buildHead(template, {
+    title: SECURITY_TITLE,
+    description: SECURITY_DESCRIPTION,
+    url: `${SITE_URL}${SECURITY_PATH}`,
+  })
+
+  const points = SECURITY_POINTS.map(
+    (point) => `<li><strong>${esc(point.title)}</strong><span>${esc(point.body)}</span></li>`,
+  ).join('')
+
+  const toc = SECURITY_SECTIONS.map(
+    (section) => `<li><a href="#${esc(section.id)}">${esc(section.title)}</a></li>`,
+  ).join('')
+
+  const sections = SECURITY_SECTIONS.map(
+    (section) => `<section id="${esc(section.id)}" class="security__section">
+<h2>${esc(section.title)}</h2>
+${section.blocks.map(securityBlock).join('\n')}
+</section>`,
+  ).join('\n')
+
+  const body = `${buildHeader()}
+<main class="page">
+<article class="security">
+<nav class="security__back" aria-label="パンくず"><a href="/">← kintone 無料プラグイン一覧</a></nav>
+<header class="security__header"><h1>セキュリティについて</h1><p>${esc(SECURITY_LEAD)}</p></header>
+<ul class="security__points">${points}</ul>
+<nav class="security__toc" aria-label="目次"><h2>目次</h2><ol>${toc}</ol></nav>
+${sections}
+<p class="security__updated">最終更新日：${esc(formatDate(SECURITY_UPDATED_AT))}</p>
+</article>
+</main>
+${buildFooter()}`
+
+  return html.replace('<div id="root"></div>', `<div id="root">${body}</div>`)
 }
