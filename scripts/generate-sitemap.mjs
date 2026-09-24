@@ -24,6 +24,7 @@ import { pluginUrl } from '../src/lib/plugin-meta.js'
 import { categorySlug, sortCategories } from '../src/lib/category.js'
 import { listUrl } from '../src/lib/list-meta.js'
 import { SITE_URL } from '../src/lib/site.js'
+import { SECURITY_PATH } from '../src/lib/security.js'
 
 const OUT_FILE = resolve('dist', 'sitemap.xml')
 const TODAY = new Date().toISOString().slice(0, 10)
@@ -70,6 +71,7 @@ try {
         priority: '0.8',
         changefreq: 'monthly',
       })),
+      { loc: `${SITE_URL}${SECURITY_PATH}`, priority: '0.5', changefreq: 'monthly' },
     ]),
     'utf8',
   )

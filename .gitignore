@@ -24,6 +24,9 @@ amplifyconfiguration*
 .env.local
 .env.*.local
 
+# プラグインのセキュリティチェック結果（scripts/check-plugin-security.mjs が作る）
+plugin-security-report.md
+
 # ログ
 npm-debug.log*
 
