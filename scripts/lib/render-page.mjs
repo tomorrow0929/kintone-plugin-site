@@ -25,6 +25,7 @@ import {
   listPageJsonLd,
 } from '../../src/lib/list-meta.js'
 import { PLUGIN_FAQ } from '../../src/lib/faq.js'
+import { pickRelated } from '../../src/lib/related.js'
 import {
   SECURITY_PATH,
   SECURITY_TITLE,
@@ -205,15 +206,12 @@ function buildServiceCta(plugin, isReport) {
 
 /**
  * 関連プラグイン。
- * 同じカテゴリを先に、足りなければ他のカテゴリから補って4本。
- * PluginDetail.jsx と同じ選び方です。
+ * 選び方は src/lib/related.js（PluginDetail.jsx と共通）。
  *
  * ここで書き出すリンクは、クローラーが36本を見つける道にもなります。
  */
 function buildRelated(plugin, all) {
-  const others = all.filter((p) => p.slug !== plugin.slug)
-  const sameCategory = others.filter((p) => p.category && p.category === plugin.category)
-  const picked = [...sameCategory, ...others.filter((p) => !sameCategory.includes(p))].slice(0, 4)
+  const picked = pickRelated(plugin, all)
   if (picked.length === 0) return ''
 
   const items = picked

@@ -11,6 +11,7 @@ import { formatBytes, formatDate } from '../lib/format.js'
 import { normalizeUsage } from '../lib/usage.js'
 import { normalizeCategory, withNormalizedCategory, categoryPath } from '../lib/category.js'
 import { usePageMeta } from '../lib/meta.js'
+import { pickRelated } from '../lib/related.js'
 import {
   pluginPath,
   pluginPageTitle,
@@ -116,12 +117,10 @@ export default function PluginDetail() {
       try {
         const all = await listPublishedPlugins()
         if (cancelled) return
-        const others = all
+        const normalized = all
           .map((p) => ({ ...p, category: normalizeCategory(p.category) }))
           .filter((p) => p.id !== plugin.id)
-        const sameCategory = others.filter((p) => p.category && p.category === plugin.category)
-        const picked = [...sameCategory, ...others.filter((p) => !sameCategory.includes(p))]
-        setRelated(picked.slice(0, 4))
+        setRelated(pickRelated(plugin, normalized))
       } catch {
         // 関連の取得失敗は無視する
       }
