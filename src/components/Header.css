@@ -5,7 +5,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 20px;
-  background-color: var(--brand-dark);
+  background-color: rgba(250, 248, 244, 0.97);
+  border-bottom: 1px solid var(--border);
 }
 
 .site-header__brand {
@@ -15,15 +16,20 @@
   text-decoration: none;
 }
 
+.site-header__home {
+  display: flex;
+}
+
 .site-header__logo {
   height: 52px;
 }
 
 .site-header__label {
-  color: #fff;
+  color: var(--brand-dark);
   font-weight: 700;
-  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  border-left: 1px solid var(--border);
   padding-left: 12px;
+  text-decoration: none;
 }
 
 .site-header__nav {
@@ -32,7 +38,7 @@
 }
 
 .site-header__nav a {
-  color: #fff;
+  color: var(--brand-dark);
   text-decoration: none;
   font-weight: bold;
 }

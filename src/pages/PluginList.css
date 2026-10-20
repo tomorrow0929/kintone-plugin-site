@@ -35,7 +35,7 @@
 .filters__search:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 114, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 119, 168, 0.15);
 }
 
 .filters__tabs {
@@ -91,7 +91,7 @@
 .plugin-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow);
-  border-color: #c8dcf0;
+  border-color: #bfe4f4;
 }
 
 .plugin-card__icon {
@@ -101,7 +101,7 @@
   display: grid;
   place-items: center;
   border-radius: 12px;
-  background: #eaf4fb;
+  background: #e6f6fd;
   font-size: 1.6rem;
   overflow: hidden;
 }
@@ -139,7 +139,7 @@
   margin-left: 12px;
   padding: 2px 14px;
   border-radius: 999px;
-  background: #eaf4fb;
+  background: #e6f6fd;
   color: var(--brand-navy);
   font-size: 0.9rem;
   font-weight: 700;

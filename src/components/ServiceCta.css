@@ -7,7 +7,7 @@
   gap: 16px;
   margin-bottom: 24px;
   padding: 16px 22px;
-  background: linear-gradient(135deg, #eaf4fb 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #e6f6fd 0%, #ffffff 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
@@ -36,8 +36,8 @@
 .service-cta {
   margin-top: 28px;
   padding: 26px 28px;
-  background: linear-gradient(135deg, #eaf4fb 0%, #ffffff 70%);
-  border: 1px solid #c8dcf0;
+  background: linear-gradient(135deg, #e6f6fd 0%, #ffffff 70%);
+  border: 1px solid #bfe4f4;
   border-radius: var(--radius);
 }
 

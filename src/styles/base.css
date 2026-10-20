@@ -1,20 +1,25 @@
+/*
+ * 色は事業サイト（to-morrow.net）・LPと同じ配色にそろえています。
+ * 紺 #13243A／生成り #FAF8F4／水色 #00AEEF・#0077A8／オレンジ #FF8C42
+ */
 :root {
-  --brand-dark: #01545a;
-  --brand-navy: #004d99;
-  --accent: #0072ff;
-  --accent-2: #00c6ff;
+  --brand-dark: #13243a;   /* 紺。見出しなどの濃い文字 */
+  --brand-navy: #13243a;
+  --accent: #0077a8;       /* 水色の文字・リンク */
+  --accent-2: #00aeef;     /* 水色（飾り用） */
+  --accent-warm: #ff8c42;  /* オレンジ（ボタン） */
 
-  --page-bg: #f5f8fa;
+  --page-bg: #faf8f4;
   --surface: #ffffff;
-  --border: #e2e8ef;
+  --border: #e4e0d8;
 
-  --text: #1f2933;
-  --muted: #66727f;
+  --text: #13243a;
+  --muted: #4a5a6e;
   --danger: #b00020;
   --success: #0a7f45;
 
   --radius: 14px;
-  --shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  --shadow: 0 6px 20px rgba(19, 36, 58, 0.06);
 }
 
 * {
@@ -30,7 +35,7 @@ body {
 }
 
 a {
-  color: var(--brand-navy);
+  color: var(--accent);
 }
 
 img {
@@ -61,18 +66,19 @@ img {
   padding: 12px 22px;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff;
+  /* 事業サイト・LPと同じ、オレンジに紺の文字 */
+  background: var(--accent-warm);
+  color: var(--brand-dark);
   font: inherit;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
   transition: transform 0.08s ease, filter 0.2s ease;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 20px rgba(255, 140, 66, 0.28);
 }
 
 .button:hover {
-  filter: brightness(1.05);
+  filter: brightness(0.97);
   transform: translateY(-2px);
 }
 

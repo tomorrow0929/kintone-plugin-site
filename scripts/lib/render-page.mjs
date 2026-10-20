@@ -133,7 +133,7 @@ function buildHead(html, { title, description, url, jsonLd }) {
 /** ヘッダー（src/components/Header.jsx と同じ見た目） */
 function buildHeader() {
   return `<header class="site-header">
-<a href="/" class="site-header__brand"><img src="/logo.svg" alt="to.Morrow" class="site-header__logo" /><span class="site-header__label">kintone プラグイン</span></a>
+<div class="site-header__brand"><a href="${esc(links.about)}" class="site-header__home" aria-label="to.Morrow ホームページのトップへ"><img src="/logo.svg" alt="to.Morrow" class="site-header__logo" /></a><a href="/" class="site-header__label">kintone プラグイン</a></div>
 <nav class="site-header__nav">
 <a href="/" aria-current="page">プラグイン一覧</a>
 <a href="${esc(links.services)}" target="_blank" rel="noreferrer">料金・代行</a>

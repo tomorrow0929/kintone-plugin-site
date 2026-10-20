@@ -5,10 +5,15 @@ import './Header.css'
 export default function Header() {
   return (
     <header className="site-header">
-      <Link to="/" className="site-header__brand">
-        <img src="/logo.svg" alt="to.Morrow" className="site-header__logo" />
-        <span className="site-header__label">kintone プラグイン</span>
-      </Link>
+      <div className="site-header__brand">
+        {/* ロゴは事業サイト（to-morrow.net）のトップへ。横の「kintone プラグイン」はこのサイトの一覧へ */}
+        <a href={links.about} className="site-header__home" aria-label="to.Morrow ホームページのトップへ">
+          <img src="/logo.svg" alt="to.Morrow" className="site-header__logo" />
+        </a>
+        <Link to="/" className="site-header__label">
+          kintone プラグイン
+        </Link>
+      </div>
       <nav className="site-header__nav">
         <NavLink to="/" end>
           プラグイン一覧
