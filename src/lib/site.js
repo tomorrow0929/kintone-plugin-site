@@ -14,7 +14,7 @@ export const BUSINESS_SITE = 'https://to-morrow.net'
 
 export const links = {
   about: `${BUSINESS_SITE}/`,
-  contact: `${BUSINESS_SITE}/#contact`,
+  contact: `${BUSINESS_SITE}/contact/`,
   services: `${BUSINESS_SITE}/services.html`,
   reports: `${BUSINESS_SITE}/reports.html`,
   support: `${BUSINESS_SITE}/support.html`,
