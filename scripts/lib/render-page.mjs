@@ -45,6 +45,7 @@ import {
   pluginPageDescription,
   pluginJsonLd,
 } from '../../src/lib/plugin-meta.js'
+import { NOTICES } from '../../src/lib/notices.js'
 
 /** HTMLに文字を埋め込むときのエスケープ（本文・属性値の両方に使う） */
 function esc(value) {
@@ -434,9 +435,20 @@ export function buildListPage(template, category, allPlugins) {
   )}" target="_blank" rel="noreferrer">料金を見る</a>
 </aside>`
 
+  // 不具合のお詫び・更新情報（src/components/UpdateNotice.jsx と同じ）
+  const notices = NOTICES.map(
+    (n) => `<aside class="update-notice">
+<p class="update-notice__date">${esc(n.date)}</p>
+<h2 class="update-notice__title">${esc(n.title)}</h2>
+${n.body.map((text) => `<p>${esc(text)}</p>`).join('\n')}
+${n.link ? `<a class="update-notice__link" href="${esc(n.link.href)}">${esc(n.link.label)} →</a>` : ''}
+</aside>`,
+  ).join('\n')
+
   const body = `${buildHeader()}
 <main class="page">
 ${hero}
+${notices}
 ${banner}
 ${buildCategoryTabs(categories, category)}
 <ul class="plugin-grid">${plugins.map(buildCard).join('')}</ul>

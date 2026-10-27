@@ -13,6 +13,7 @@ import {
 import { usePageMeta } from '../lib/meta.js'
 import { listPath, listPageTitle, listPageDescription, listPageJsonLd } from '../lib/list-meta.js'
 import ServiceCta from '../components/ServiceCta.jsx'
+import UpdateNotice from '../components/UpdateNotice.jsx'
 import './PluginList.css'
 
 /**
@@ -189,6 +190,7 @@ export default function PluginList() {
 
       {state === 'done' && (
         <>
+          <UpdateNotice />
           <ServiceCta variant="banner" />
 
           <div className="filters">
